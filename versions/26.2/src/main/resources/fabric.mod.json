@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "donutmaparts",
+  "version": "${version}",
+  "name": "DonutMaparts",
+  "description": "Auto-detects maparts on DonutSMP and uploads them to the mapart wall.",
+  "authors": ["ExDeDe"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/donutmaparts",
+    "sources": "https://github.com/exdede/Donutmaparts",
+    "issues": "https://github.com/exdede/Donutmaparts/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/donutmaparts/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.exdede.donutmaparts.DonutMapartsMod"],
+    "modmenu": ["dev.exdede.donutmaparts.compat.ModMenuIntegration"]
+  },
+  "mixins": ["donutmaparts.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~26.2",
+    "fabric-api": "*",
+    "malilib": "*"
+  }
+}

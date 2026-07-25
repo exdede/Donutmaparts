@@ -10,7 +10,7 @@ should not.
 
 ## Install
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**.
+1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**, **26.1** or **26.2**, and take the matching build of the mod.
 2. Drop these into your `mods` folder:
    - [DonutMaparts](https://modrinth.com/mod/donutmaparts) ([CurseForge mirror](https://www.curseforge.com/minecraft/mc-mods/donutmaparts))
    - [Fabric API](https://modrinth.com/mod/fabric-api)
@@ -20,6 +20,30 @@ should not.
 
 Browse the wall any time at **https://exdede.xyz/maparts**.
 
+## Mapart tracking
+
+Hunting a specific mapart? Put its map ID on the tracking list and let the mod
+watch for you.
+
+Open **Settings > Tracking**, then either add one ID at a time or paste a whole
+batch separated by commas or newlines. Duplicates and anything that is not a
+map ID get dropped, so pasting the same list twice is harmless.
+
+From then on, whenever you open any inventory, chest, shulker or ender chest,
+the mod checks every slot. If a tracked map is in there it:
+
+- plays a sound, one of six you can pick from, or none at all
+- posts a toast naming the map and where it turned up
+- pulses a gold highlight on that exact slot until you close the screen
+
+Each map alerts once per time you open a container, so a chest full of tracked
+maps does not turn into a slot machine. Flip on **auto remove** and an ID drops
+off the list the moment you find it.
+
+Tracking works on any server and in singleplayer, and keeps working with
+uploads turned off. It sends nothing anywhere. Your list never leaves your
+client.
+
 ## Settings
 
 Open the config three ways:
@@ -27,13 +51,26 @@ Open the config three ways:
 - **Mod Menu**: click the gear on the DonutMaparts card.
 - **Keybind**: Options > Controls > Key Binds > "DonutMaparts" > "Open Settings" (unbound by default, bind whatever you like).
 
-Options:
+**General tab:**
 
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Enabled | on | Master toggle for capture and upload |
 | Toast notifications | on | Occasional "catalogued N maparts" toast so you know it is working |
 | Debug mode | off | Slot coloring, tooltips, and verbose console logging (development tooling) |
+
+**Tracking tab:**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Tracking enabled | on | Master toggle for the tracking alerts |
+| Auto remove on match | off | Drop an ID from the list as soon as it is found |
+| Alert sound enabled | on | Play a sound on a match |
+| Alert sound | Pling | Pling, Bell, XP Pickup, Level Up, Anvil Land or Arrow Hit |
+| Tracking toasts | on | Show a toast on a match, independent of the upload toasts above |
+
+Plus three buttons: **Add ID**, **Bulk Add** and **Tracked IDs (N)**, the last
+of which opens the list editor where you can remove entries one by one.
 
 ## Privacy and takedowns
 
@@ -46,14 +83,34 @@ Want a mapart of yours off the wall? Contact me via
 
 ## Building from source
 
-Requires JDK 21.
+One self-contained Gradle build per Minecraft version, under `versions/`:
+
+| Directory | Minecraft | JDK | Mappings |
+| --- | --- | --- | --- |
+| `versions/1.21.11` | 1.21.11 | 21 | Yarn 1.21.11+build.6 |
+| `versions/26.1` | 26.1.2 | 25 | Mojang official |
+| `versions/26.2` | 26.2 | 25 | Mojang official |
 
 ```bash
-cd mod
+cd versions/1.21.11
 JAVA_HOME=/path/to/jdk-21 ./gradlew build
+
+cd versions/26.2
+JAVA_HOME=/path/to/jdk-25 ./gradlew build
 ```
 
-The built jar lands in `build/libs/`.
+The built jar lands in that version's own `build/libs/`.
+
+Why the split: Minecraft 26.1 is the first unobfuscated release, so Fabric
+stopped publishing Yarn and Intermediary after 1.21.11. Builds for 26.1 and
+later use Mojang's own names and the non-remapping `net.fabricmc.fabric-loom`
+plugin, which is not compatible with the 1.21.11 build in the same Gradle
+project. The pure-logic classes and their unit tests are identical across all
+three, since they import nothing from Minecraft.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

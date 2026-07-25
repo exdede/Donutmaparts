@@ -1,0 +1,52 @@
+plugins {
+    // Minecraft 26.1 is the first unobfuscated release, so this is the non-remapping
+    // Loom plugin. There is deliberately no `mappings` dependency below: Yarn and
+    // Intermediary were discontinued after 1.21.11, and the game now ships Mojang's
+    // own class, member and parameter names.
+    id 'net.fabricmc.fabric-loom' version '1.17.17'
+    id 'java'
+}
+
+// Jar name carries the Minecraft version so the three builds do not collide
+// when uploaded to the same CurseForge and Modrinth release.
+version = "${project.mod_version}+${project.minecraft_version}"
+group = project.maven_group
+
+base { archivesName = project.archives_base_name }
+
+repositories {
+    maven { url 'https://api.modrinth.com/maven' }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // Plain `implementation`, not `modImplementation`: nothing needs remapping now.
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "maven.modrinth:malilib:${project.malilib_version}"
+    implementation "maven.modrinth:modmenu:${project.modmenu_version}"
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
