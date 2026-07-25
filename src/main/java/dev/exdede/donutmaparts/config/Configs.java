@@ -12,6 +12,8 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
+import fi.dy.masa.malilib.config.options.ConfigOptionList;
+import fi.dy.masa.malilib.config.options.ConfigStringList;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import dev.exdede.donutmaparts.DonutMapartsMod;
@@ -48,6 +50,33 @@ public class Configs implements IConfigHandler {
             ENABLED, TOASTS, DEBUG_MODE);
     }
 
+    public static class Tracking {
+        public static final ConfigBoolean TRACKING_ENABLED = new ConfigBoolean(
+            "trackingEnabled", true, "Watch open inventories for maps on your tracked ID list");
+        public static final ConfigStringList TRACKED_MAP_IDS = new ConfigStringList(
+            "trackedMapIds", ImmutableList.of(), "Map IDs to watch for. Edited from the Tracking tab");
+        public static final ConfigBoolean AUTO_REMOVE_ON_MATCH = new ConfigBoolean(
+            "autoRemoveOnMatch", false, "Drop a map ID from the tracked list once it has been found");
+        public static final ConfigBoolean ALERT_SOUND_ENABLED = new ConfigBoolean(
+            "alertSoundEnabled", true, "Play a sound when a tracked map is found");
+        public static final ConfigOptionList ALERT_SOUND = new ConfigOptionList(
+            "alertSound", AlertSound.PLING, "Which sound plays when a tracked map is found");
+        public static final ConfigBoolean TRACKING_TOASTS = new ConfigBoolean(
+            "trackingToasts", true, "Show a toast when a tracked map is found");
+
+        // Everything persisted to disk.
+        public static final List<IConfigBase> OPTIONS = ImmutableList.of(
+            TRACKING_ENABLED, TRACKED_MAP_IDS, AUTO_REMOVE_ON_MATCH,
+            ALERT_SOUND_ENABLED, ALERT_SOUND, TRACKING_TOASTS);
+
+        // What the Tracking tab renders as widgets. TRACKED_MAP_IDS is deliberately
+        // absent: it gets its own button row so the tab can offer add and bulk add
+        // alongside the list editor.
+        public static final List<IConfigBase> GUI_OPTIONS = ImmutableList.of(
+            TRACKING_ENABLED, AUTO_REMOVE_ON_MATCH, ALERT_SOUND_ENABLED,
+            ALERT_SOUND, TRACKING_TOASTS);
+    }
+
     public static void loadFromFile() {
         // NOTE: FileUtils.getConfigDirectory() returns java.nio.file.Path in malilib
         // 0.27.16, not java.io.File as older malilib versions did. The File-based
@@ -60,6 +89,7 @@ public class Configs implements IConfigHandler {
                 if (element != null && element.isJsonObject()) {
                     JsonObject root = element.getAsJsonObject();
                     ConfigUtils.readConfigBase(root, "General", General.OPTIONS);
+                    ConfigUtils.readConfigBase(root, "Tracking", Tracking.OPTIONS);
                 }
             }
             catch (RuntimeException e) {
@@ -79,6 +109,7 @@ public class Configs implements IConfigHandler {
         }
         JsonObject root = new JsonObject();
         ConfigUtils.writeConfigBase(root, "General", General.OPTIONS);
+        ConfigUtils.writeConfigBase(root, "Tracking", Tracking.OPTIONS);
         JsonUtils.writeJsonToFile(root, dir.resolve(CONFIG_FILE_NAME));
     }
 

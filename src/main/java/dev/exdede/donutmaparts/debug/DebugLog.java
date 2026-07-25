@@ -23,4 +23,5 @@ public final class DebugLog {
     public static void queue(String msg) { log("Queue", msg); }
     public static void http(String msg) { log("HTTP", msg); }
     public static void security(String msg) { log("Security", msg); }
+    public static void tracking(String msg) { log("Tracking", msg); }
 }
