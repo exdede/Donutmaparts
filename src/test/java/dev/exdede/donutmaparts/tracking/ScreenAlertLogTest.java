@@ -42,9 +42,9 @@ class ScreenAlertLogTest {
     }
 
     @Test
-    void highlightSurvivesRemovalFromTheTrackedList() {
-        // The auto remove case: MapTracker drops the ID from config right after
-        // noting the highlight, and the slot must keep glowing until the screen closes.
+    void noteHighlightIsStickyUntilTokenChanges() {
+        // A noted highlight stays true for repeat reads under the same token,
+        // it does not clear itself after being read once.
         ScreenAlertLog log = new ScreenAlertLog();
         log.shouldAlert(SCREEN_A, 42);
         log.noteHighlight(42);

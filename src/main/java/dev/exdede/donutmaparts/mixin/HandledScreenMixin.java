@@ -36,6 +36,10 @@ public class HandledScreenMixin {
     @Inject(method = "drawSlot", at = @At("TAIL"))
     private void donutmaparts$colorSlot(DrawContext context, Slot slot, int mouseX, int mouseY, CallbackInfo ci) {
         try {
+            if (!Configs.General.DEBUG_MODE.getBooleanValue() && !Configs.Tracking.TRACKING_ENABLED.getBooleanValue()) {
+                return;
+            }
+
             ItemStack stack = slot.getStack();
             MapIdComponent mapId = stack.get(DataComponentTypes.MAP_ID);
             if (mapId == null) return;

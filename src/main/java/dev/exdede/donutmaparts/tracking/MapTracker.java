@@ -1,5 +1,6 @@
 package dev.exdede.donutmaparts.tracking;
 
+import dev.exdede.donutmaparts.DonutMapartsMod;
 import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.debug.DebugLog;
 import net.minecraft.client.MinecraftClient;
@@ -32,36 +33,49 @@ public final class MapTracker {
      * feeding the chest, the player moving a stack) are caught by the same path.
      */
     public void tickScreen(MinecraftClient mc) {
-        if (mc == null) return;
-        if (!Configs.Tracking.TRACKING_ENABLED.getBooleanValue()) return;
+        try {
+            if (mc == null) return;
+            if (!Configs.Tracking.TRACKING_ENABLED.getBooleanValue()) return;
 
-        if (!(mc.currentScreen instanceof HandledScreen<?> screen)) {
-            this.alertLog.syncToken(null);
-            return;
-        }
-
-        this.alertLog.syncToken(screen);
-        refreshSnapshot();
-        if (this.trackedIds.isEmpty()) return;
-
-        List<Slot> slots = screen.getScreenHandler().slots;
-        for (int i = 0; i < slots.size(); i++) {
-            ItemStack stack = slots.get(i).getStack();
-            MapIdComponent component = stack.get(DataComponentTypes.MAP_ID);
-            if (component == null) continue;
-
-            int mapId = component.id();
-            if (!this.trackedIds.contains(mapId)) continue;
-            if (!this.alertLog.shouldAlert(screen, mapId)) continue;
-
-            this.alertLog.noteHighlight(mapId);
-            String title = screen.getTitle().getString();
-            DebugLog.tracking("tracked map " + mapId + " found in " + title + " slot " + i);
-            TrackingNotifier.alert(mc, mapId, title, i);
-
-            if (Configs.Tracking.AUTO_REMOVE_ON_MATCH.getBooleanValue()) {
-                removeTracked(mapId);
+            if (!(mc.currentScreen instanceof HandledScreen<?> screen)) {
+                this.alertLog.syncToken(null);
+                return;
             }
+
+            this.alertLog.syncToken(screen);
+            refreshSnapshot();
+            if (this.trackedIds.isEmpty()) return;
+
+            boolean dirty = false;
+            List<Slot> slots = screen.getScreenHandler().slots;
+            for (int i = 0; i < slots.size(); i++) {
+                ItemStack stack = slots.get(i).getStack();
+                MapIdComponent component = stack.get(DataComponentTypes.MAP_ID);
+                if (component == null) continue;
+
+                int mapId = component.id();
+                if (!this.trackedIds.contains(mapId)) continue;
+                if (!this.alertLog.shouldAlert(screen, mapId)) continue;
+
+                this.alertLog.noteHighlight(mapId);
+                String title = screen.getTitle().getString();
+                DebugLog.tracking("tracked map " + mapId + " found in " + title + " slot " + i);
+                TrackingNotifier.alert(mc, mapId, title, i);
+
+                if (Configs.Tracking.AUTO_REMOVE_ON_MATCH.getBooleanValue()) {
+                    removeTracked(mapId);
+                    dirty = true;
+                }
+            }
+
+            if (dirty) {
+                // Written straight away so an auto removal survives a crash rather
+                // than waiting for a clean shutdown to flush, but only once per
+                // tick no matter how many slots matched.
+                Configs.saveToFile();
+            }
+        } catch (Throwable t) {
+            DonutMapartsMod.LOGGER.error("Unhandled exception in tracking screen scan", t);
         }
     }
 
@@ -79,9 +93,6 @@ public final class MapTracker {
         List<String> updated = TrackedIds.remove(
             Configs.Tracking.TRACKED_MAP_IDS.getStrings(), mapId);
         Configs.Tracking.TRACKED_MAP_IDS.setStrings(updated);
-        // Written straight away so an auto removal survives a crash rather than
-        // waiting for a clean shutdown to flush.
-        Configs.saveToFile();
         refreshSnapshot();
         DebugLog.tracking("auto-removed map " + mapId + ", " + updated.size() + " still tracked");
     }
