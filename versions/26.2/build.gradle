@@ -7,7 +7,9 @@ plugins {
     id 'java'
 }
 
-version = project.mod_version
+// Jar name carries the Minecraft version so the three builds do not collide
+// when uploaded to the same CurseForge and Modrinth release.
+version = "${project.mod_version}+${project.minecraft_version}"
 group = project.maven_group
 
 base { archivesName = project.archives_base_name }
