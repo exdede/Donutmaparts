@@ -10,7 +10,7 @@ should not.
 
 ## Install
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**.
+1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**, **26.1** or **26.2**, and take the matching build of the mod.
 2. Drop these into your `mods` folder:
    - [DonutMaparts](https://modrinth.com/mod/donutmaparts) ([CurseForge mirror](https://www.curseforge.com/minecraft/mc-mods/donutmaparts))
    - [Fabric API](https://modrinth.com/mod/fabric-api)
@@ -46,14 +46,30 @@ Want a mapart of yours off the wall? Contact me via
 
 ## Building from source
 
-Requires JDK 21.
+One self-contained Gradle build per Minecraft version, under `versions/`:
+
+| Directory | Minecraft | JDK | Mappings |
+| --- | --- | --- | --- |
+| `versions/1.21.11` | 1.21.11 | 21 | Yarn 1.21.11+build.6 |
+| `versions/26.1` | 26.1.2 | 25 | Mojang official |
+| `versions/26.2` | 26.2 | 25 | Mojang official |
 
 ```bash
-cd mod
+cd versions/1.21.11
 JAVA_HOME=/path/to/jdk-21 ./gradlew build
+
+cd versions/26.2
+JAVA_HOME=/path/to/jdk-25 ./gradlew build
 ```
 
-The built jar lands in `build/libs/`.
+The built jar lands in that version's own `build/libs/`.
+
+Why the split: Minecraft 26.1 is the first unobfuscated release, so Fabric
+stopped publishing Yarn and Intermediary after 1.21.11. Builds for 26.1 and
+later use Mojang's own names and the non-remapping `net.fabricmc.fabric-loom`
+plugin, which is not compatible with the 1.21.11 build in the same Gradle
+project. The pure-logic classes and their unit tests are identical across all
+three, since they import nothing from Minecraft.
 
 ## License
 
