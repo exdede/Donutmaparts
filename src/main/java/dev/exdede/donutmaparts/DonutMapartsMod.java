@@ -10,6 +10,7 @@ import dev.exdede.donutmaparts.queue.MapCapture;
 import dev.exdede.donutmaparts.queue.UploadQueue;
 import dev.exdede.donutmaparts.session.ToastNotifier;
 import dev.exdede.donutmaparts.session.UploadSession;
+import dev.exdede.donutmaparts.tracking.MapTracker;
 import fi.dy.masa.malilib.config.ConfigManager;
 import fi.dy.masa.malilib.event.InitializationHandler;
 import net.fabricmc.api.ClientModInitializer;
@@ -58,6 +59,7 @@ public class DonutMapartsMod implements ClientModInitializer {
         SentHashCache cache = new SentHashCache(dataDir.resolve("sent_hashes.txt"));
         failedStore = new FailedQueueStore(dataDir.resolve("failed_queue.json"));
         MapCaptureTracker.INSTANCE = new MapCaptureTracker(queue, cache);
+        MapTracker.INSTANCE = new MapTracker();
 
         // Failed items from previous launches go straight back into the queue.
         List<MapCapture> carried = failedStore.load();
@@ -78,6 +80,9 @@ public class DonutMapartsMod implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openConfigKey.wasPressed()) {
                 client.setScreen(new GuiConfig());
+            }
+            if (MapTracker.INSTANCE != null) {
+                MapTracker.INSTANCE.tickScreen(client);
             }
             if (MapCaptureTracker.INSTANCE != null) {
                 MapCaptureTracker.INSTANCE.tick(System.currentTimeMillis(),
