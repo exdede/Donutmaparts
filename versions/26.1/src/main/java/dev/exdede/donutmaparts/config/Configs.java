@@ -64,17 +64,37 @@ public class Configs implements IConfigHandler {
         public static final ConfigBoolean TRACKING_TOASTS = new ConfigBoolean(
             "trackingToasts", true, "Show a toast when a tracked map is found");
 
+        // Per-GUI scope allowlist: which kinds of open container tracking is
+        // allowed to alert in. All default true so upgrading an existing
+        // install changes nothing until the player deliberately narrows their
+        // scope -- the gate is live, but "allow everything" matches prior
+        // (pre-scope) behaviour exactly.
+        public static final ConfigBoolean TRACK_CHEST = new ConfigBoolean(
+            "trackChest", true, "Alert for tracked maps found in a plain chest");
+        public static final ConfigBoolean TRACK_ENDER_CHEST = new ConfigBoolean(
+            "trackEnderChest", true, "Alert for tracked maps found in your ender chest");
+        public static final ConfigBoolean TRACK_SHULKER_BOX = new ConfigBoolean(
+            "trackShulkerBox", true, "Alert for tracked maps found in a shulker box");
+        public static final ConfigBoolean TRACK_AUCTION_HOUSE = new ConfigBoolean(
+            "trackAuctionHouse", true, "Alert for tracked maps found in the Auction House");
+        public static final ConfigBoolean TRACK_OTHER = new ConfigBoolean(
+            "trackOther", true, "Alert for tracked maps found in any other container");
+
         // Everything persisted to disk.
         public static final List<IConfigBase> OPTIONS = ImmutableList.of(
             TRACKING_ENABLED, TRACKED_MAP_IDS, AUTO_REMOVE_ON_MATCH,
-            ALERT_SOUND_ENABLED, ALERT_SOUND, TRACKING_TOASTS);
+            ALERT_SOUND_ENABLED, ALERT_SOUND, TRACKING_TOASTS,
+            TRACK_CHEST, TRACK_ENDER_CHEST, TRACK_SHULKER_BOX,
+            TRACK_AUCTION_HOUSE, TRACK_OTHER);
 
         // What the Tracking tab renders as widgets. TRACKED_MAP_IDS is deliberately
         // absent: it gets its own button row so the tab can offer add and bulk add
         // alongside the list editor.
         public static final List<IConfigBase> GUI_OPTIONS = ImmutableList.of(
             TRACKING_ENABLED, AUTO_REMOVE_ON_MATCH, ALERT_SOUND_ENABLED,
-            ALERT_SOUND, TRACKING_TOASTS);
+            ALERT_SOUND, TRACKING_TOASTS,
+            TRACK_CHEST, TRACK_ENDER_CHEST, TRACK_SHULKER_BOX,
+            TRACK_AUCTION_HOUSE, TRACK_OTHER);
     }
 
     public static void loadFromFile() {

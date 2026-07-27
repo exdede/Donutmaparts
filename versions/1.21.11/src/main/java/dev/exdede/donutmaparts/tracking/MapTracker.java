@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.MapIdComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
 import java.util.List;
 import java.util.Set;
@@ -46,6 +47,16 @@ public final class MapTracker {
             refreshSnapshot();
             if (this.trackedIds.isEmpty()) return;
 
+            // Scope allowlist: classify the open screen once per tick (not per
+            // slot) and bail before scanning at all if this category of GUI is
+            // switched off, same effect as if the screen weren't open.
+            String title = screen.getTitle().getString();
+            TrackingScope scope = TrackingScope.classify(classifyContainerKind(screen), title);
+            if (!isScopeAllowed(scope)) {
+                DebugLog.tracking("scope " + scope + " disabled, skipping alert scan");
+                return;
+            }
+
             boolean dirty = false;
             List<Slot> slots = screen.getScreenHandler().slots;
             for (int i = 0; i < slots.size(); i++) {
@@ -58,7 +69,6 @@ public final class MapTracker {
                 if (!this.alertLog.shouldAlert(screen, mapId)) continue;
 
                 this.alertLog.noteHighlight(mapId);
-                String title = screen.getTitle().getString();
                 DebugLog.tracking("tracked map " + mapId + " found in " + title + " slot " + i);
                 TrackingNotifier.alert(mc, mapId, title, i);
 
@@ -103,5 +113,38 @@ public final class MapTracker {
         this.snapshotSource = List.copyOf(current);
         this.trackedIds = TrackedIds.toIdSet(current);
         DebugLog.tracking("tracked ID snapshot rebuilt, " + this.trackedIds.size() + " IDs");
+    }
+
+    /**
+     * Coarse Minecraft-side signal for TrackingScope.classify(). A shulker box
+     * gets its own dedicated ScreenHandlerType; a plain chest, an ender chest,
+     * and a generic server GUI (e.g. the Auction House) all share the same
+     * generic 9xN handler type on the wire and are only told apart by title,
+     * which classify() handles from here.
+     */
+    private static TrackingScope.ContainerKind classifyContainerKind(HandledScreen<?> screen) {
+        ScreenHandlerType<?> type = screen.getScreenHandler().getType();
+        if (type == ScreenHandlerType.SHULKER_BOX) return TrackingScope.ContainerKind.SHULKER_BOX;
+        if (isGenericContainer(type)) return TrackingScope.ContainerKind.GENERIC_CONTAINER;
+        return TrackingScope.ContainerKind.OTHER;
+    }
+
+    private static boolean isGenericContainer(ScreenHandlerType<?> type) {
+        return type == ScreenHandlerType.GENERIC_9X1
+            || type == ScreenHandlerType.GENERIC_9X2
+            || type == ScreenHandlerType.GENERIC_9X3
+            || type == ScreenHandlerType.GENERIC_9X4
+            || type == ScreenHandlerType.GENERIC_9X5
+            || type == ScreenHandlerType.GENERIC_9X6;
+    }
+
+    private static boolean isScopeAllowed(TrackingScope scope) {
+        return switch (scope) {
+            case CHEST -> Configs.Tracking.TRACK_CHEST.getBooleanValue();
+            case ENDER_CHEST -> Configs.Tracking.TRACK_ENDER_CHEST.getBooleanValue();
+            case SHULKER_BOX -> Configs.Tracking.TRACK_SHULKER_BOX.getBooleanValue();
+            case AUCTION_HOUSE -> Configs.Tracking.TRACK_AUCTION_HOUSE.getBooleanValue();
+            case OTHER -> Configs.Tracking.TRACK_OTHER.getBooleanValue();
+        };
     }
 }

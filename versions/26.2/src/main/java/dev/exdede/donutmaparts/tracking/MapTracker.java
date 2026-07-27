@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import java.util.List;
 import java.util.Set;
@@ -46,6 +47,16 @@ public final class MapTracker {
             refreshSnapshot();
             if (this.trackedIds.isEmpty()) return;
 
+            // Scope allowlist: classify the open screen once per tick (not per
+            // slot) and bail before scanning at all if this category of GUI is
+            // switched off, same effect as if the screen weren't open.
+            String title = screen.getTitle().getString();
+            TrackingScope scope = TrackingScope.classify(classifyContainerKind(screen), title);
+            if (!isScopeAllowed(scope)) {
+                DebugLog.tracking("scope " + scope + " disabled, skipping alert scan");
+                return;
+            }
+
             boolean dirty = false;
             List<Slot> slots = screen.getMenu().slots;
             for (int i = 0; i < slots.size(); i++) {
@@ -58,7 +69,6 @@ public final class MapTracker {
                 if (!this.alertLog.shouldAlert(screen, mapId)) continue;
 
                 this.alertLog.noteHighlight(mapId);
-                String title = screen.getTitle().getString();
                 DebugLog.tracking("tracked map " + mapId + " found in " + title + " slot " + i);
                 TrackingNotifier.alert(mc, mapId, title, i);
 
@@ -103,5 +113,38 @@ public final class MapTracker {
         this.snapshotSource = List.copyOf(current);
         this.trackedIds = TrackedIds.toIdSet(current);
         DebugLog.tracking("tracked ID snapshot rebuilt, " + this.trackedIds.size() + " IDs");
+    }
+
+    /**
+     * Coarse Minecraft-side signal for TrackingScope.classify(). A shulker box
+     * gets its own dedicated MenuType; a plain chest, an ender chest, and a
+     * generic server GUI (e.g. the Auction House) all share the same generic
+     * 9xN menu type on the wire and are only told apart by title, which
+     * classify() handles from here.
+     */
+    private static TrackingScope.ContainerKind classifyContainerKind(AbstractContainerScreen<?> screen) {
+        MenuType<?> type = screen.getMenu().getType();
+        if (type == MenuType.SHULKER_BOX) return TrackingScope.ContainerKind.SHULKER_BOX;
+        if (isGenericContainer(type)) return TrackingScope.ContainerKind.GENERIC_CONTAINER;
+        return TrackingScope.ContainerKind.OTHER;
+    }
+
+    private static boolean isGenericContainer(MenuType<?> type) {
+        return type == MenuType.GENERIC_9x1
+            || type == MenuType.GENERIC_9x2
+            || type == MenuType.GENERIC_9x3
+            || type == MenuType.GENERIC_9x4
+            || type == MenuType.GENERIC_9x5
+            || type == MenuType.GENERIC_9x6;
+    }
+
+    private static boolean isScopeAllowed(TrackingScope scope) {
+        return switch (scope) {
+            case CHEST -> Configs.Tracking.TRACK_CHEST.getBooleanValue();
+            case ENDER_CHEST -> Configs.Tracking.TRACK_ENDER_CHEST.getBooleanValue();
+            case SHULKER_BOX -> Configs.Tracking.TRACK_SHULKER_BOX.getBooleanValue();
+            case AUCTION_HOUSE -> Configs.Tracking.TRACK_AUCTION_HOUSE.getBooleanValue();
+            case OTHER -> Configs.Tracking.TRACK_OTHER.getBooleanValue();
+        };
     }
 }
