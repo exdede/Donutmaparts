@@ -4,6 +4,10 @@ import java.util.List;
 import dev.exdede.donutmaparts.DonutMapartsMod;
 import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.debug.DebugLog;
+import dev.exdede.donutmaparts.net.BackendClient;
+import dev.exdede.donutmaparts.net.LinkCodes;
+import dev.exdede.donutmaparts.session.LinkNotifier;
+import dev.exdede.donutmaparts.session.UploadSession;
 import dev.exdede.donutmaparts.tracking.TrackedIds;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -13,6 +17,7 @@ import fi.dy.masa.malilib.gui.GuiTextInputMultiLine;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.interfaces.IStringConsumerFeedback;
 import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 
 /**
@@ -56,6 +61,9 @@ public class GuiConfig extends GuiConfigsBase {
 
         if (tab == ConfigGuiTab.TRACKING) {
             createTrackingButtons(10, 48);
+        }
+        else {
+            createGeneralButtons(10, 48);
         }
     }
 
@@ -109,6 +117,57 @@ public class GuiConfig extends GuiConfigsBase {
         Configs.Tracking.TRACKED_MAP_IDS.setStrings(merged);
         Configs.saveToFile();
         DebugLog.tracking("added " + parsed.size() + " IDs, " + merged.size() + " now tracked");
+        return true;
+    }
+
+    private void createGeneralButtons(int x, int y) {
+        ButtonGeneric link = new ButtonGeneric(x, y, -1, 20,
+            StringUtils.translate("donutmaparts.gui.button.link_account"));
+        this.addButton(link, (pressed, mouseButton) -> openLinkAccountDialog());
+    }
+
+    /**
+     * Linking an account needs a live API token from a completed handshake,
+     * which today only exists after joining a server (UploadSession.onJoin
+     * only calls BackendClient.handshake once ServerDetector confirms
+     * DonutSMP). A blank entry dialog with nothing to submit against would
+     * be worse than no dialog at all, so this is guarded on session state
+     * the same way the rest of the mod gates features, e.g.
+     * flushIfDue's session.isActive() check.
+     */
+    private void openLinkAccountDialog() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        String apiToken = UploadSession.INSTANCE.tokenOrNull();
+        BackendClient client = UploadSession.INSTANCE.clientOrNull();
+        if (apiToken == null || client == null) {
+            LinkNotifier.noSession(mc);
+            return;
+        }
+        GuiBase.openGui(new GuiTextInput(
+            16, "donutmaparts.gui.title.link_account", "", this,
+            (IStringConsumerFeedback) raw -> onLinkCodeEntered(mc, client, apiToken, raw)));
+    }
+
+    /**
+     * Format-checks locally (nice-to-have UX, the backend is the real
+     * authority) then fires the submission and closes the dialog
+     * immediately -- submitLinkCode is a genuine network round trip, and
+     * malilib's IStringConsumerFeedback callback is synchronous, so unlike
+     * onIdsEntered above there is nothing to wait on here. The outcome
+     * (linked or not, never which reason) arrives later as a toast, the
+     * same fire-and-forget-then-toast shape MapTracker.maybeAutoCollect
+     * uses for auto-collection submissions. Returning false only for an
+     * obviously malformed code keeps the dialog open so the player can fix
+     * a typo without losing what they typed.
+     */
+    private boolean onLinkCodeEntered(MinecraftClient mc, BackendClient client, String apiToken, String raw) {
+        String code = LinkCodes.normalize(raw);
+        if (code == null) return false;
+
+        client.submitLinkCode(apiToken, code).thenAccept(success -> mc.execute(() -> {
+            if (success) LinkNotifier.linked(mc);
+            else LinkNotifier.linkFailed(mc);
+        }));
         return true;
     }
 }

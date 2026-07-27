@@ -123,4 +123,28 @@ class BackendClientTest {
         boolean ok = client.submitCollectionEvent("c".repeat(64), 5).get();
         assertFalse(ok);
     }
+
+    @Test
+    void submitLinkCodeSendsBearerTokenAndCodeAndResolvesTrueOn200() throws Exception {
+        respondWith("/api/mod/link", "{\"ok\":true,\"display_name\":\"ExDeDe\"}");
+        BackendClient client = new BackendClient(baseUrl);
+        boolean ok = client.submitLinkCode("c".repeat(64), "A1B2C3D4").get();
+        assertTrue(ok);
+        assertEquals("Bearer " + "c".repeat(64), lastAuth.get());
+        assertEquals("A1B2C3D4", lastBody.get().get("code").getAsString());
+    }
+
+    @Test
+    void submitLinkCodeResolvesFalseOnNon200InsteadOfThrowing() throws Exception {
+        // 400 (invalid/expired), 409 (already verified) and 502 (Mojang lookup
+        // failed) are all expected, silent-skip outcomes for this feature, not
+        // errors, matching submitCollectionEvent's non-200 handling.
+        server.createContext("/api/mod/link", ex -> {
+            ex.sendResponseHeaders(400, -1);
+            ex.close();
+        });
+        BackendClient client = new BackendClient(baseUrl);
+        boolean ok = client.submitLinkCode("c".repeat(64), "A1B2C3D4").get();
+        assertFalse(ok);
+    }
 }

@@ -109,6 +109,30 @@ public class BackendClient {
             .exceptionally(e -> false);
     }
 
+    /**
+     * Submits the account link code the player typed in. Mirrors
+     * submitCollectionEvent's posture: 400 (invalid/expired code), 409
+     * (already verified), 502 (Mojang lookup failed) and any other non-200
+     * are all expected, silent-skip outcomes here, not errors -- the
+     * backend deliberately never distinguishes why a code failed
+     * (anti-enumeration, same posture as the site's login flow), so this
+     * resolves false for all of them instead of propagating send()'s
+     * IllegalStateException.
+     */
+    public CompletableFuture<Boolean> submitLinkCode(String apiToken, String code) {
+        JsonObject body = new JsonObject();
+        body.addProperty("code", code);
+        HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/api/mod/link"))
+            .timeout(Duration.ofSeconds(15))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + apiToken)
+            .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+            .build();
+        return send(req)
+            .thenApply(json -> true)
+            .exceptionally(e -> false);
+    }
+
     private CompletableFuture<JsonObject> send(HttpRequest req) {
         return http.sendAsync(req, HttpResponse.BodyHandlers.ofString())
             .thenApply(resp -> {
