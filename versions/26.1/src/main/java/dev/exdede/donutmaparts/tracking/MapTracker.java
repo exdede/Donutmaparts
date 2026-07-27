@@ -31,6 +31,12 @@ import java.util.Set;
  * pipeline's session) and is gated on ServerDetector's DonutSMP check via
  * UploadSession.isOnDonutSmp(). That gate applies only to auto-collection --
  * the tracked-id scan above it must stay ungated.
+ *
+ * Configs.Tracking.TRACKING_ENABLED is, separately, that whole config
+ * section's master switch: it gates tickScreen() unconditionally, so
+ * turning it off stops both the tracked-id scan AND auto-collection --
+ * AUTO_COLLECT being on is never enough by itself to keep running with
+ * tracking otherwise fully disabled. See shouldScanThisTick().
  */
 public final class MapTracker {
     public static MapTracker INSTANCE;
@@ -73,7 +79,6 @@ public final class MapTracker {
             if (mc == null) return;
             boolean trackingEnabled = Configs.Tracking.TRACKING_ENABLED.getBooleanValue();
             boolean autoCollectEnabled = Configs.Tracking.AUTO_COLLECT.getBooleanValue();
-            if (!trackingEnabled && !autoCollectEnabled) return;
 
             if (!(mc.screen instanceof AbstractContainerScreen<?> screen)) {
                 this.alertLog.syncToken(null);
@@ -85,10 +90,17 @@ public final class MapTracker {
             refreshSnapshot();
 
             // Auto-collection has no tracked-list prerequisite: it inspects
-            // every map slot regardless of wishlist membership. Only bail
-            // here when neither feature has a reason to scan this tick.
-            boolean hasTrackedIds = trackingEnabled && !this.trackedIds.isEmpty();
-            if (!hasTrackedIds && !autoCollectEnabled) return;
+            // every map slot regardless of wishlist membership. But
+            // TRACKING_ENABLED is Configs.Tracking's section master switch,
+            // so it must gate the whole method -- both this wishlist scan
+            // and auto-collection -- unconditionally; AUTO_COLLECT alone
+            // must never bypass a fully disabled tracking section. Routed
+            // through a pure function (not an inline `if`) so this decision,
+            // the exact thing the TRACKING_ENABLED=false/AUTO_COLLECT=true
+            // bug lived in, is directly unit testable. See
+            // shouldScanThisTick() below.
+            boolean hasTrackedIds = !this.trackedIds.isEmpty();
+            if (!shouldScanThisTick(trackingEnabled, hasTrackedIds, autoCollectEnabled)) return;
 
             // Scope allowlist: classify the open screen once per tick (not per
             // slot) and bail before scanning at all if this category of GUI is
@@ -146,6 +158,27 @@ public final class MapTracker {
         } catch (Throwable t) {
             DonutMapartsMod.LOGGER.error("Unhandled exception in tracking screen scan", t);
         }
+    }
+
+    /**
+     * The whole tracked-id-scan/auto-collect gating decision for one tick,
+     * as a pure function. TRACKING_ENABLED is Configs.Tracking's section
+     * master switch: it must gate BOTH the tracked-id wishlist scan and
+     * auto-collection unconditionally, so AUTO_COLLECT alone can never
+     * bypass a fully disabled tracking section. hasTrackedIds and
+     * autoCollectEnabled only decide whether to proceed once trackingEnabled
+     * is confirmed on. Split out of tickScreen()'s inline conditional
+     * (mirroring isHighlightEligible/isAutoCollectEligible below) because
+     * tickScreen() itself needs a live MinecraftClient and reading Configs
+     * needs a running Fabric Loader (malilib's ConfigBase reaches into
+     * FabricLoaderImpl during class init), neither of which a plain JUnit
+     * run provides -- exactly why the original bug (TRACKING_ENABLED=false
+     * not gating AUTO_COLLECT=true) went untested. Package-private for
+     * tests.
+     */
+    boolean shouldScanThisTick(boolean trackingEnabled, boolean hasTrackedIds, boolean autoCollectEnabled) {
+        if (!trackingEnabled) return false;
+        return hasTrackedIds || autoCollectEnabled;
     }
 
     /**

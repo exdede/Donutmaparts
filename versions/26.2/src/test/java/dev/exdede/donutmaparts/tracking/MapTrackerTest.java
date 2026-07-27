@@ -150,4 +150,57 @@ class MapTrackerTest {
 
         assertTrue(tracker.isAutoCollectEligible(99, true));
     }
+
+    /**
+     * shouldScanThisTick(boolean, boolean, boolean) is the pure form of
+     * tickScreen()'s own top-of-method gating decision (see the javadoc on
+     * both), split out specifically because tickScreen() itself needs a
+     * live MinecraftClient/Configs and can't be driven directly here. These
+     * cover all five scenarios from the TRACKING_ENABLED/AUTO_COLLECT gating
+     * fix: TRACKING_ENABLED=false must block everything regardless of
+     * AUTO_COLLECT (the bug), and every TRACKING_ENABLED=true combination
+     * must behave exactly as it did before that bug existed.
+     */
+    @Test
+    void trackingDisabledBlocksScanEvenWhenAutoCollectEnabled() {
+        // Scenario 1: the bug. TRACKING_ENABLED=false must produce the same
+        // early return regardless of AUTO_COLLECT or trackedIds.
+        MapTracker tracker = new MapTracker();
+
+        assertFalse(tracker.shouldScanThisTick(false, false, true));
+        assertFalse(tracker.shouldScanThisTick(false, true, true));
+        assertFalse(tracker.shouldScanThisTick(false, false, false));
+    }
+
+    @Test
+    void trackingEnabledWithNoTrackedIdsAndAutoCollectOffDoesNotScan() {
+        // Scenario 2: unchanged, early return.
+        MapTracker tracker = new MapTracker();
+
+        assertFalse(tracker.shouldScanThisTick(true, false, false));
+    }
+
+    @Test
+    void trackingEnabledWithNoTrackedIdsButAutoCollectOnProceeds() {
+        // Scenario 3: unchanged, proceeds -- the case the last commit added.
+        MapTracker tracker = new MapTracker();
+
+        assertTrue(tracker.shouldScanThisTick(true, false, true));
+    }
+
+    @Test
+    void trackingEnabledWithTrackedIdsAndAutoCollectOffProceeds() {
+        // Scenario 4: unchanged, tracked-id scan runs.
+        MapTracker tracker = new MapTracker();
+
+        assertTrue(tracker.shouldScanThisTick(true, true, false));
+    }
+
+    @Test
+    void trackingEnabledWithTrackedIdsAndAutoCollectOnProceeds() {
+        // Scenario 5: unchanged, both paths run independently per slot.
+        MapTracker tracker = new MapTracker();
+
+        assertTrue(tracker.shouldScanThisTick(true, true, true));
+    }
 }
