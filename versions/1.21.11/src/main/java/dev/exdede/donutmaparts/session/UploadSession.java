@@ -24,6 +24,7 @@ public final class UploadSession {
     private volatile boolean restricted;
     private volatile String apiToken;
     private volatile BackendClient client;
+    private volatile boolean onDonutSmp;
 
     private UploadSession() {}
 
@@ -31,6 +32,16 @@ public final class UploadSession {
     public boolean isRestricted() { return restricted; }
     public String tokenOrNull() { return apiToken; }
     public BackendClient clientOrNull() { return client; }
+
+    /**
+     * Cached at join time from the same ServerDetector.isDonutAddress() check
+     * onJoin() already runs, so other features that need "am I on DonutSMP
+     * right now" (auto-collection) can read this instead of re-implementing
+     * address detection. Deliberately independent of active/restricted:
+     * those also require a completed handshake, this reflects only the
+     * address check.
+     */
+    public boolean isOnDonutSmp() { return onDonutSmp; }
 
     public String brandHintOrNull() {
         MinecraftClient mc = MinecraftClient.getInstance();
@@ -46,12 +57,14 @@ public final class UploadSession {
         active = false;
         restricted = false;
         apiToken = null;
+        onDonutSmp = false;
         if (!Configs.General.ENABLED.getBooleanValue()) return;
         ServerInfo info = mc.getCurrentServerEntry();
         if (info == null || !ServerDetector.isDonutAddress(info.address)) {
             DebugLog.security("not DonutSMP, capture disabled for this session");
             return;
         }
+        onDonutSmp = true;
         UUID uuid = mc.getSession().getUuidOrNull();
         String ign = mc.getSession().getUsername();
         if (uuid == null) return;
@@ -93,5 +106,6 @@ public final class UploadSession {
         restricted = false;
         apiToken = null;
         client = null;
+        onDonutSmp = false;
     }
 }

@@ -86,6 +86,29 @@ public class BackendClient {
         });
     }
 
+    /**
+     * Submits a single "add this map to my collection" event. Idempotent
+     * server-side (INSERT OR IGNORE), so the only outcomes that matter here
+     * are success/failure -- the body carries nothing the caller needs.
+     * 403 (unverified account), 404 (unknown map id), 429 (rate limited) and
+     * any other non-200 are all expected, silent-skip outcomes for this
+     * feature rather than errors, so they resolve to false instead of
+     * propagating send()'s IllegalStateException.
+     */
+    public CompletableFuture<Boolean> submitCollectionEvent(String apiToken, int minecraftMapId) {
+        JsonObject body = new JsonObject();
+        body.addProperty("minecraft_map_id", minecraftMapId);
+        HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/api/mod/collections/add"))
+            .timeout(Duration.ofSeconds(15))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + apiToken)
+            .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+            .build();
+        return send(req)
+            .thenApply(json -> true)
+            .exceptionally(e -> false);
+    }
+
     private CompletableFuture<JsonObject> send(HttpRequest req) {
         return http.sendAsync(req, HttpResponse.BodyHandlers.ofString())
             .thenApply(resp -> {

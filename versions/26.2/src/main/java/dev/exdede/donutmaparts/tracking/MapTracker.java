@@ -3,6 +3,8 @@ package dev.exdede.donutmaparts.tracking;
 import dev.exdede.donutmaparts.DonutMapartsMod;
 import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.debug.DebugLog;
+import dev.exdede.donutmaparts.net.BackendClient;
+import dev.exdede.donutmaparts.session.UploadSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
@@ -10,16 +12,25 @@ import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Watches the open inventory screen for maps on the tracked ID list.
  *
- * Deliberately independent of the upload pipeline: no UploadSession check, no
- * ServerDetector check, no Configs.General.ENABLED check. Tracking sends nothing
- * anywhere, so the mod's DonutSMP-only rule has nothing to protect here and the
- * feature works in singleplayer and with uploads switched off.
+ * Deliberately independent of the upload pipeline for the tracked-id wishlist
+ * scan: no UploadSession check, no ServerDetector check, no
+ * Configs.General.ENABLED check there. Tracking sends nothing anywhere, so the
+ * mod's DonutSMP-only rule has nothing to protect for that half of this class,
+ * and it works in singleplayer and with uploads switched off.
+ *
+ * Auto-collection (Configs.Tracking.AUTO_COLLECT) is the one exception, per a
+ * locked project decision: it submits to the backend, so it depends on
+ * UploadSession (for the API token and BackendClient reused from the upload
+ * pipeline's session) and is gated on ServerDetector's DonutSMP check via
+ * UploadSession.isOnDonutSmp(). That gate applies only to auto-collection --
+ * the tracked-id scan above it must stay ungated.
  */
 public final class MapTracker {
     public static MapTracker INSTANCE;
@@ -27,6 +38,16 @@ public final class MapTracker {
     private final ScreenAlertLog alertLog = new ScreenAlertLog();
     private List<String> snapshotSource = List.of();
     private Set<Integer> trackedIds = Set.of();
+
+    /**
+     * In-memory only, cleared on relaunch. Auto-collection's backend endpoint
+     * is already idempotent (INSERT OR IGNORE), so the only thing local dedup
+     * needs to prevent is re-firing the same request every tick while one
+     * container stays open in one play session -- there is no correctness
+     * reason to persist this across relaunches like SentHashCache does for
+     * the upload pipeline.
+     */
+    private final Set<Integer> autoCollectedThisSession = new HashSet<>();
 
     /**
      * Cached once per tick, right where the open screen's TrackingScope is
@@ -50,7 +71,9 @@ public final class MapTracker {
     public void tickScreen(Minecraft mc) {
         try {
             if (mc == null) return;
-            if (!Configs.Tracking.TRACKING_ENABLED.getBooleanValue()) return;
+            boolean trackingEnabled = Configs.Tracking.TRACKING_ENABLED.getBooleanValue();
+            boolean autoCollectEnabled = Configs.Tracking.AUTO_COLLECT.getBooleanValue();
+            if (!trackingEnabled && !autoCollectEnabled) return;
 
             if (!(mc.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
                 this.alertLog.syncToken(null);
@@ -60,13 +83,20 @@ public final class MapTracker {
 
             this.alertLog.syncToken(screen);
             refreshSnapshot();
-            if (this.trackedIds.isEmpty()) return;
+
+            // Auto-collection has no tracked-list prerequisite: it inspects
+            // every map slot regardless of wishlist membership. Only bail
+            // here when neither feature has a reason to scan this tick.
+            boolean hasTrackedIds = trackingEnabled && !this.trackedIds.isEmpty();
+            if (!hasTrackedIds && !autoCollectEnabled) return;
 
             // Scope allowlist: classify the open screen once per tick (not per
             // slot) and bail before scanning at all if this category of GUI is
             // switched off, same effect as if the screen weren't open. Cached
-            // on scopeAllowedThisTick so shouldHighlight() below can apply the
-            // same gate to the persistent slot highlight, not just this scan.
+            // on scopeAllowedThisTick so shouldHighlight() below (and
+            // isAutoCollectEligible()) can apply the same gate to the
+            // persistent slot highlight and to auto-collection, not just
+            // this scan.
             String title = screen.getTitle().getString();
             TrackingScope scope = TrackingScope.classify(classifyContainerKind(screen), title);
             this.scopeAllowedThisTick = isScopeAllowed(scope);
@@ -74,6 +104,11 @@ public final class MapTracker {
                 DebugLog.tracking("scope " + scope + " disabled, skipping alert scan");
                 return;
             }
+
+            // Computed once per tick, not per slot, same as scopeAllowedThisTick
+            // above: the DonutSMP gate the locked project decision requires for
+            // auto-collection only, never for the tracked-id scan below.
+            boolean onDonutSmp = autoCollectEnabled && UploadSession.INSTANCE.isOnDonutSmp();
 
             boolean dirty = false;
             List<Slot> slots = screen.getMenu().slots;
@@ -83,6 +118,12 @@ public final class MapTracker {
                 if (component == null) continue;
 
                 int mapId = component.id();
+
+                if (autoCollectEnabled) {
+                    maybeAutoCollect(mc, mapId, onDonutSmp);
+                }
+
+                if (!hasTrackedIds) continue;
                 if (!this.trackedIds.contains(mapId)) continue;
                 if (!this.alertLog.shouldAlert(screen, mapId)) continue;
 
@@ -105,6 +146,48 @@ public final class MapTracker {
         } catch (Throwable t) {
             DonutMapartsMod.LOGGER.error("Unhandled exception in tracking screen scan", t);
         }
+    }
+
+    /**
+     * Fires an auto-collection submission for one slot's map id, unless
+     * already ineligible (wrong scope, not on DonutSMP, or already submitted
+     * this session) or the upload session has no token yet. Marks the id
+     * submitted optimistically, before the response comes back: a slow or
+     * failed request must not be retried every subsequent tick while the
+     * container stays open.
+     */
+    private void maybeAutoCollect(Minecraft mc, int mapId, boolean onDonutSmp) {
+        if (!isAutoCollectEligible(mapId, onDonutSmp)) return;
+
+        String apiToken = UploadSession.INSTANCE.tokenOrNull();
+        BackendClient client = UploadSession.INSTANCE.clientOrNull();
+        if (apiToken == null || client == null) {
+            DebugLog.tracking("auto-collect skipped for map " + mapId + ", no active session yet");
+            return;
+        }
+
+        this.autoCollectedThisSession.add(mapId);
+        DebugLog.tracking("auto-collect submitting map " + mapId);
+        client.submitCollectionEvent(apiToken, mapId).thenAccept(success -> {
+            if (success) {
+                mc.execute(() -> TrackingNotifier.autoCollected(mc, mapId));
+            } else {
+                DebugLog.tracking("auto-collect not accepted for map " + mapId);
+            }
+        });
+    }
+
+    /**
+     * The Configs-free half of the auto-collect decision (scope + session
+     * dedup + the passed-in DonutSMP signal), split out the same way
+     * isHighlightEligible is split from shouldHighlight so it is unit
+     * testable without a live Fabric Loader or UploadSession/Minecraft
+     * instance. Package-private for tests.
+     */
+    boolean isAutoCollectEligible(int mapId, boolean onDonutSmp) {
+        if (!this.scopeAllowedThisTick) return false;
+        if (!onDonutSmp) return false;
+        return !this.autoCollectedThisSession.contains(mapId);
     }
 
     /**

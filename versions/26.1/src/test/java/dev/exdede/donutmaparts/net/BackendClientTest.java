@@ -98,4 +98,29 @@ class BackendClientTest {
         BackendClient client = new BackendClient(baseUrl);
         assertThrows(Exception.class, () -> client.status("c".repeat(64), "0.1.0").get());
     }
+
+    @Test
+    void submitCollectionEventSendsBearerTokenAndMapIdAndResolvesTrueOn200() throws Exception {
+        respondWith("/api/mod/collections/add", "{\"ok\":true}");
+        BackendClient client = new BackendClient(baseUrl);
+        boolean ok = client.submitCollectionEvent("c".repeat(64), 5).get();
+        assertTrue(ok);
+        assertEquals("Bearer " + "c".repeat(64), lastAuth.get());
+        assertEquals(5, lastBody.get().get("minecraft_map_id").getAsInt());
+    }
+
+    @Test
+    void submitCollectionEventResolvesFalseOnNon200InsteadOfThrowing() throws Exception {
+        // 403 (unverified account), 404 (unknown map id) and 429 (rate limited)
+        // are all expected, silent-skip outcomes for this feature, not errors,
+        // so the future must resolve rather than complete exceptionally like
+        // status()/handshake()/uploadBatch() do on a non-200.
+        server.createContext("/api/mod/collections/add", ex -> {
+            ex.sendResponseHeaders(403, -1);
+            ex.close();
+        });
+        BackendClient client = new BackendClient(baseUrl);
+        boolean ok = client.submitCollectionEvent("c".repeat(64), 5).get();
+        assertFalse(ok);
+    }
 }

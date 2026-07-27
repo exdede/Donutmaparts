@@ -34,4 +34,19 @@ public final class TrackingNotifier {
                 Component.literal("Map #" + mapId + " in " + screenTitle + ", slot " + slotIndex));
         }
     }
+
+    /**
+     * Toast for a successful auto-collection submission. Deliberately not a
+     * call to alert(): auto-collection has nothing to do with the tracked-id
+     * wishlist, so it gets no sound and no slot highlight, just a brief
+     * confirmation that something was added.
+     */
+    public static void autoCollected(Minecraft mc, int mapId) {
+        if (mc == null) return;
+        SystemToast.addOrUpdate(
+            mc.gui.toastManager(),
+            new SystemToast.SystemToastId(5000L),
+            Component.literal("Added to your collection"),
+            Component.literal("Map #" + mapId));
+    }
 }

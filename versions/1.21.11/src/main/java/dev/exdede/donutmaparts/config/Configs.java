@@ -80,12 +80,21 @@ public class Configs implements IConfigHandler {
         public static final ConfigBoolean TRACK_OTHER = new ConfigBoolean(
             "trackOther", true, "Alert for tracked maps found in any other container");
 
+        // Independent of the scope allowlist above and of TRACKING_ENABLED: this
+        // submits newly seen maps to the player's online collection regardless of
+        // the tracked-id wishlist. Defaults false (unlike the scope booleans) since
+        // this is a brand new feature that starts sending data to the backend, so
+        // it needs an explicit opt-in rather than being on by default.
+        public static final ConfigBoolean AUTO_COLLECT = new ConfigBoolean(
+            "autoCollect", false,
+            "Automatically add newly seen maps to your online collection while on DonutSMP");
+
         // Everything persisted to disk.
         public static final List<IConfigBase> OPTIONS = ImmutableList.of(
             TRACKING_ENABLED, TRACKED_MAP_IDS, AUTO_REMOVE_ON_MATCH,
             ALERT_SOUND_ENABLED, ALERT_SOUND, TRACKING_TOASTS,
             TRACK_CHEST, TRACK_ENDER_CHEST, TRACK_SHULKER_BOX,
-            TRACK_AUCTION_HOUSE, TRACK_OTHER);
+            TRACK_AUCTION_HOUSE, TRACK_OTHER, AUTO_COLLECT);
 
         // What the Tracking tab renders as widgets. TRACKED_MAP_IDS is deliberately
         // absent: it gets its own button row so the tab can offer add and bulk add
@@ -94,7 +103,7 @@ public class Configs implements IConfigHandler {
             TRACKING_ENABLED, AUTO_REMOVE_ON_MATCH, ALERT_SOUND_ENABLED,
             ALERT_SOUND, TRACKING_TOASTS,
             TRACK_CHEST, TRACK_ENDER_CHEST, TRACK_SHULKER_BOX,
-            TRACK_AUCTION_HOUSE, TRACK_OTHER);
+            TRACK_AUCTION_HOUSE, TRACK_OTHER, AUTO_COLLECT);
     }
 
     public static void loadFromFile() {

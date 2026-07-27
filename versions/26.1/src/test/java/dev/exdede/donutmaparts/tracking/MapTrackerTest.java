@@ -37,6 +37,13 @@ class MapTrackerTest {
         return (ScreenAlertLog) field.get(tracker);
     }
 
+    @SuppressWarnings("unchecked")
+    private static Set<Integer> autoCollectedOf(MapTracker tracker) throws Exception {
+        Field field = MapTracker.class.getDeclaredField("autoCollectedThisSession");
+        field.setAccessible(true);
+        return (Set<Integer>) field.get(tracker);
+    }
+
     @Test
     void eligibleForATrackedIdWhenScopeIsAllowed() throws Exception {
         MapTracker tracker = new MapTracker();
@@ -92,5 +99,55 @@ class MapTrackerTest {
         alertLogOf(tracker).noteHighlight(42);
 
         assertFalse(tracker.isHighlightEligible(42));
+    }
+
+    /**
+     * isAutoCollectEligible(int, boolean) is the Configs-free half of the
+     * auto-collect decision (see the split between shouldHighlight and
+     * isHighlightEligible above for why): it never touches
+     * Configs.Tracking.AUTO_COLLECT itself, only scopeAllowedThisTick, the
+     * onDonutSmp signal passed in by the caller, and the in-memory
+     * per-session dedup set.
+     */
+    @Test
+    void eligibleForAutoCollectWhenScopeAllowedAndOnDonutSmpAndNotYetSubmitted() throws Exception {
+        MapTracker tracker = new MapTracker();
+        setScopeAllowed(tracker, true);
+
+        assertTrue(tracker.isAutoCollectEligible(42, true));
+    }
+
+    @Test
+    void notEligibleForAutoCollectWhenScopeIsNotAllowed() throws Exception {
+        MapTracker tracker = new MapTracker();
+        setScopeAllowed(tracker, false);
+
+        assertFalse(tracker.isAutoCollectEligible(42, true));
+    }
+
+    @Test
+    void notEligibleForAutoCollectWhenNotOnDonutSmp() throws Exception {
+        MapTracker tracker = new MapTracker();
+        setScopeAllowed(tracker, true);
+
+        assertFalse(tracker.isAutoCollectEligible(42, false));
+    }
+
+    @Test
+    void notEligibleForAutoCollectWhenAlreadySubmittedThisSession() throws Exception {
+        MapTracker tracker = new MapTracker();
+        setScopeAllowed(tracker, true);
+        autoCollectedOf(tracker).add(42);
+
+        assertFalse(tracker.isAutoCollectEligible(42, true));
+    }
+
+    @Test
+    void autoCollectEligibilityIsPerMapId() throws Exception {
+        MapTracker tracker = new MapTracker();
+        setScopeAllowed(tracker, true);
+        autoCollectedOf(tracker).add(42);
+
+        assertTrue(tracker.isAutoCollectEligible(99, true));
     }
 }
