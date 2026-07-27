@@ -40,6 +40,6 @@ public final class LinkNotifier {
             mc.getToastManager(),
             new SystemToast.Type(5000L),
             Text.literal("Not connected"),
-            Text.literal("Join a server first to link your account"));
+            Text.literal("Join DonutSMP first to link your account"));
     }
 }
