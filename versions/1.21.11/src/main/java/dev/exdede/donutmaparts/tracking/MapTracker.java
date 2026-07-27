@@ -29,6 +29,20 @@ public final class MapTracker {
     private Set<Integer> trackedIds = Set.of();
 
     /**
+     * Cached once per tick, right where the open screen's TrackingScope is
+     * classified below, so shouldHighlight() (called per-slot, per-frame, from
+     * a mixin that has and needs no screen context of its own) can gate the
+     * persistent highlight the same way the sound/toast alert already gates
+     * itself on scope. Deliberately not reset in the trackedIds-empty early
+     * return: that branch is also hit the tick after an auto-removal empties
+     * trackedIds on the *same* still-open screen, and the sticky
+     * "still highlighted after auto remove" behaviour below depends on this
+     * flag still reflecting that screen's real, already-confirmed-allowed
+     * scope rather than being clobbered back to false.
+     */
+    private boolean scopeAllowedThisTick = false;
+
+    /**
      * Called every client tick. Rescans rather than hooking screen open, so maps
      * that arrive after the screen opened (a shulker preview filling in, a hopper
      * feeding the chest, the player moving a stack) are caught by the same path.
@@ -40,6 +54,7 @@ public final class MapTracker {
 
             if (!(mc.currentScreen instanceof HandledScreen<?> screen)) {
                 this.alertLog.syncToken(null);
+                this.scopeAllowedThisTick = false;
                 return;
             }
 
@@ -49,10 +64,13 @@ public final class MapTracker {
 
             // Scope allowlist: classify the open screen once per tick (not per
             // slot) and bail before scanning at all if this category of GUI is
-            // switched off, same effect as if the screen weren't open.
+            // switched off, same effect as if the screen weren't open. Cached
+            // on scopeAllowedThisTick so shouldHighlight() below can apply the
+            // same gate to the persistent slot highlight, not just this scan.
             String title = screen.getTitle().getString();
             TrackingScope scope = TrackingScope.classify(classifyContainerKind(screen), title);
-            if (!isScopeAllowed(scope)) {
+            this.scopeAllowedThisTick = isScopeAllowed(scope);
+            if (!this.scopeAllowedThisTick) {
                 DebugLog.tracking("scope " + scope + " disabled, skipping alert scan");
                 return;
             }
@@ -92,10 +110,27 @@ public final class MapTracker {
     /**
      * True while the slot should pulse. The union of "still tracked" and "matched
      * during this screen opening" is what keeps a slot glowing after auto remove
-     * has already pulled the ID out of the list.
+     * has already pulled the ID out of the list. Also gated on the scope cached
+     * by the last tickScreen() call, so a disallowed GUI category (e.g.
+     * TRACK_SHULKER_BOX off) suppresses the highlight the same way it already
+     * suppresses the sound/toast alert -- without threading screen context
+     * through this per-slot, per-frame call.
      */
     public boolean shouldHighlight(int mapId) {
         if (!Configs.Tracking.TRACKING_ENABLED.getBooleanValue()) return false;
+        return isHighlightEligible(mapId);
+    }
+
+    /**
+     * The trackedIds/scope half of shouldHighlight(), split out from the
+     * Configs.Tracking.TRACKING_ENABLED check above so it can be unit tested
+     * directly: touching Configs at all requires a live Fabric Loader
+     * (malilib's ConfigBase reaches into FabricLoaderImpl during class init),
+     * which a plain JUnit run does not provide -- the same reason this class
+     * had no tests before this method existed. Package-private for tests.
+     */
+    boolean isHighlightEligible(int mapId) {
+        if (!this.scopeAllowedThisTick) return false;
         return this.alertLog.isHighlighted(mapId) || this.trackedIds.contains(mapId);
     }
 
