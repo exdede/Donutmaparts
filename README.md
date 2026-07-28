@@ -12,7 +12,7 @@ should not.
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**, **26.1** or **26.2**, and take the matching build of the mod.
 2. Drop these into your `mods` folder:
-   - [DonutMaparts](https://modrinth.com/mod/donutmaparts) ([CurseForge mirror](https://www.curseforge.com/minecraft/mc-mods/donutmaparts))
+   - [DonutMaparts](https://modrinth.com/mod/donutmaparts) [CurseForge mirror](https://www.curseforge.com/minecraft/mc-mods/donutmaparts)
    - [Fabric API](https://modrinth.com/mod/fabric-api)
    - [malilib](https://modrinth.com/mod/malilib)
    - (optional) [Mod Menu](https://modrinth.com/mod/modmenu) to reach the settings from the mods list
