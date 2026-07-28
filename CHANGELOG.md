@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.3.0
+
+### Tracking scope toggles
+
+Narrow where tracking alerts fire instead of all-or-nothing.
+
+- New per-container toggles in the Tracking tab: plain chest, ender chest,
+  shulker box, Auction House, and everything else, each on its own switch.
+- All five default on, so upgrading changes nothing until you deliberately
+  narrow scope.
+- A plain chest and an ender chest share the same underlying container type
+  and are told apart by the screen's title text.
+
+### Account linking and mapart collection
+
+- New link code entry in the settings screen: paste the code from the site
+  to tie your Minecraft account to your web account.
+- Optional auto-collect toggle, off by default, adds newly seen maps to your
+  online collection while you are on DonutSMP. Independent of the tracked-ID
+  wishlist and of the tracking master toggle.
+
+### Fixed
+
+- The not-connected toast now names DonutSMP explicitly instead of a generic
+  "server" message.
+- Client-side link code validation matches the backend's widened format.
+
 ## 0.2.0
 
 ### Mapart tracking

@@ -44,6 +44,18 @@ Tracking works on any server and in singleplayer, and keeps working with
 uploads turned off. It sends nothing anywhere. Your list never leaves your
 client.
 
+Want alerts only for certain containers? Flip off chest, ender chest, shulker
+box, Auction House or "other" individually in the Tracking tab. All five
+start on, so nothing changes until you narrow it yourself.
+
+## Account linking and collections
+
+Paste the link code from **https://exdede.xyz/maparts** into the settings
+screen to tie your Minecraft account to your web account. Once linked, flip
+on **auto collect** (off by default) and every new mapart the mod sees on
+DonutSMP gets added to your online collection automatically, independent of
+the tracking wishlist above.
+
 ## Settings
 
 Open the config three ways:
@@ -68,9 +80,16 @@ Open the config three ways:
 | Alert sound enabled | on | Play a sound on a match |
 | Alert sound | Pling | Pling, Bell, XP Pickup, Level Up, Anvil Land or Arrow Hit |
 | Tracking toasts | on | Show a toast on a match, independent of the upload toasts above |
+| Track: plain chest | on | Alert for matches found in a plain chest |
+| Track: ender chest | on | Alert for matches found in your ender chest |
+| Track: shulker box | on | Alert for matches found in a shulker box |
+| Track: Auction House | on | Alert for matches found in the Auction House |
+| Track: other | on | Alert for matches found in any other container |
+| Auto collect | off | Add newly seen maps to your online collection while on DonutSMP (needs a linked account) |
 
 Plus three buttons: **Add ID**, **Bulk Add** and **Tracked IDs (N)**, the last
-of which opens the list editor where you can remove entries one by one.
+of which opens the list editor where you can remove entries one by one, and a
+link code field to connect your web account.
 
 ## Privacy and takedowns
 
