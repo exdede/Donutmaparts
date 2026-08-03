@@ -42,4 +42,37 @@ public final class LinkNotifier {
             Text.literal("Not connected"),
             Text.literal("Join DonutSMP first to link your account"));
     }
+
+    /**
+     * The mod being disabled is a distinct dead end from not being on
+     * DonutSMP: onJoin() returns before the handshake, so no token ever
+     * exists, and rejoining changes nothing until the option is flipped.
+     * Handshaking anyway would mean sending UUID/IGN/hwid to the backend
+     * from a mod the player explicitly turned off, so the fix is to say so
+     * rather than to quietly phone home.
+     */
+    public static void modDisabled(MinecraftClient mc) {
+        if (mc == null) return;
+        SystemToast.show(
+            mc.getToastManager(),
+            new SystemToast.Type(5000L),
+            Text.literal("Mod disabled"),
+            Text.literal("Enable the mod in settings, then rejoin to link"));
+    }
+
+    /**
+     * On DonutSMP with the mod enabled, but the handshake has not landed
+     * (still in flight, or it failed and left the session inactive). Unlike
+     * the two above this one usually resolves on its own within a second or
+     * two of joining, so it asks the player to retry rather than to change
+     * anything.
+     */
+    public static void notReady(MinecraftClient mc) {
+        if (mc == null) return;
+        SystemToast.show(
+            mc.getToastManager(),
+            new SystemToast.Type(5000L),
+            Text.literal("Not ready yet"),
+            Text.literal("Still connecting to the backend, try again shortly"));
+    }
 }

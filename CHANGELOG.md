@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- Account linking now works. The code entry box only accepted 16 characters,
+  so pasting a 32 character link code silently dropped half of it and the OK
+  button then appeared to do nothing at all. If linking has never worked for
+  you, this was why.
+- A link code the mod can tell is malformed now says so, instead of leaving
+  the dialog sitting there with no explanation.
+- The message shown when linking is unavailable now tells you which of the
+  three reasons applies: the mod is switched off, you are not on DonutSMP, or
+  the connection to the backend has not finished yet. Previously all three
+  claimed you were not on DonutSMP.
+
 ## 0.3.0
 
 ### Tracking scope toggles

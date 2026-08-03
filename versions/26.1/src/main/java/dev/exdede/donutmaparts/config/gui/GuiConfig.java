@@ -140,11 +140,21 @@ public class GuiConfig extends GuiConfigsBase {
         String apiToken = UploadSession.INSTANCE.tokenOrNull();
         BackendClient client = UploadSession.INSTANCE.clientOrNull();
         if (apiToken == null || client == null) {
-            LinkNotifier.noSession(mc);
+            // Three different dead ends land here with a null token, and each
+            // needs a different action from the player, so they get different
+            // toasts. Order matters: ENABLED is checked first because onJoin()
+            // returns on it before ever reaching the address check, so a
+            // disabled mod also reports itself as not on DonutSMP.
+            if (!Configs.General.ENABLED.getBooleanValue()) LinkNotifier.modDisabled(mc);
+            else if (!UploadSession.INSTANCE.isOnDonutSmp()) LinkNotifier.noSession(mc);
+            else LinkNotifier.notReady(mc);
             return;
         }
+        // Must be at least the 32 chars LinkCodes expects: malilib passes this
+        // straight to the text field's setMaxLength, so anything smaller
+        // silently truncates a pasted code into one normalize() then rejects.
         GuiBase.openGui(new GuiTextInput(
-            16, "donutmaparts.gui.title.link_account", "", this,
+            32, "donutmaparts.gui.title.link_account", "", this,
             (IStringConsumerFeedback) raw -> onLinkCodeEntered(mc, client, apiToken, raw)));
     }
 
@@ -162,7 +172,10 @@ public class GuiConfig extends GuiConfigsBase {
      */
     private boolean onLinkCodeEntered(Minecraft mc, BackendClient client, String apiToken, String raw) {
         String code = LinkCodes.normalize(raw);
-        if (code == null) return false;
+        if (code == null) {
+            LinkNotifier.linkFailed(mc);
+            return false;
+        }
 
         client.submitLinkCode(apiToken, code).thenAccept(success -> mc.execute(() -> {
             if (success) LinkNotifier.linked(mc);
