@@ -5,7 +5,7 @@ import dev.exdede.donutmaparts.capture.MapCaptureTracker;
 import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.config.gui.GuiConfig;
 import dev.exdede.donutmaparts.debug.DebugLog;
-import dev.exdede.donutmaparts.preview.MapPreviewPrefetch;
+import dev.exdede.donutmaparts.preview.MapPreviewRenderer;
 import dev.exdede.donutmaparts.preview.MapPreviewTextures;
 import dev.exdede.donutmaparts.preview.MapPreviewTooltipComponent;
 import dev.exdede.donutmaparts.preview.MapPreviewTooltipData;
@@ -90,7 +90,10 @@ public class DonutMapartsMod implements ClientModInitializer {
             persistFailed(queue);
             UploadSession.INSTANCE.onLeave();
             if (MapCaptureTracker.INSTANCE != null) MapCaptureTracker.INSTANCE.reset();
-            client.execute(MapPreviewTextures.INSTANCE::clear);
+            client.execute(() -> {
+                MapPreviewTextures.INSTANCE.clear();
+                MapPreviewRenderer.clearFallbackDelay();
+            });
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -108,7 +111,6 @@ public class DonutMapartsMod implements ClientModInitializer {
             if (MapTracker.INSTANCE != null) {
                 MapTracker.INSTANCE.tickScreen(client);
             }
-            MapPreviewPrefetch.tick(client);
             if (MapCaptureTracker.INSTANCE != null) {
                 MapCaptureTracker.INSTANCE.tick(System.currentTimeMillis(),
                     Configs.General.SETTLE_DELAY_MILLIS.getIntegerValue());

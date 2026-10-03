@@ -54,11 +54,12 @@ Hover any filled map, in a chest, a shulker or the **Auction House**, and the
 mod shows you the actual picture: inside the tooltip, in a bigger panel next to
 the GUI, or both.
 
-If the server already sent the map's pixels (it has been in your inventory or
-in an item frame near you), the preview is drawn from that. Auction House
-listings normally come without pixels, so the mod loads the picture from the
-DonutMaparts wall instead, which works for any mapart the wall has already
-seen. That fallback is DonutSMP-only by default and can be turned off.
+The preview is the map exactly as your game has it, drawn the same way an item
+frame draws it, so a map that got griefed shows up griefed. Only when your game
+has no data for a map at all does the mod fall back to the newest capture of it
+on the DonutMaparts wall, marked "via exdede.xyz/maparts" because it may be
+older than the map in game. That fallback waits a moment for the server first,
+is DonutSMP-only by default, and can be turned off.
 
 Everything is configurable in the **Map Preview** tab, and the unbound
 "Toggle Map Preview" keybind flips it on and off.
@@ -110,20 +111,21 @@ Open the config three ways:
 | Preview mode | Inside tooltip | Inside tooltip, side panel, or both |
 | Trigger | Always | Always, or only while holding Shift, Ctrl or Alt |
 | Scope | All inventories | All inventories, containers only, or Auction House only |
-| Tooltip size | 96 | Picture size inside the tooltip, 32 to 256 GUI pixels (128 = one map pixel per GUI pixel) |
-| Panel size | 160 | Picture size in the side panel, 32 to 512 |
+| Tooltip size | 64 | Picture size inside the tooltip, 32 to 256 GUI pixels (128 = one map pixel per GUI pixel) |
+| Panel size | 128 | Picture size in the side panel, 32 to 512. Shrinks automatically when there is no room |
 | Panel position | Right of GUI | Left/right/above/below the GUI, any screen corner, or follow the cursor. Flips sides when there is no room |
 | Panel margin | 6 | Gap between the panel and the GUI, cursor or screen edge |
 | Panel padding | 4 | Space between the panel frame and the picture |
-| Frame | on | Draw a frame around the preview |
-| Frame color / thickness | gray, 1 | ARGB color and 1 to 8 pixels |
+| Frame | Map paper | Vanilla map paper (like an item frame), flat border, or none |
+| Flat border color / thickness | gray, 1 | ARGB color and 1 to 8 pixels |
 | Background color | near black | Shows through transparent map pixels and around the panel |
-| Label | Map ID | Nothing, the map ID, or the map ID plus where the picture came from |
+| Label | None | Nothing, the map ID, or the map ID plus where the picture came from |
 | Label color | light gray | ARGB color of the label |
 | Hide map markers | on | Hide player arrows and banners on the preview |
-| Wall fallback | on | Load the picture from the DonutMaparts wall when the server sent no pixels |
+| Wall fallback | on | Show the newest wall capture when your game has no data for the map |
+| Wall fallback wait | 1000 ms | How long to wait for the server to send the map before asking the wall |
 | Wall fallback only on DonutSMP | on | Map IDs from other servers would match the wrong art |
-| Prefetch whole page | off | Load every map in the open container up front so hovering is instant |
+| Wall credit | on | Mark wall pictures "via exdede.xyz/maparts", since they may be older than the map in game |
 | Show placeholder | on | "No preview" box when there is no picture, instead of nothing |
 
 Plus three buttons: **Add ID**, **Bulk Add** and **Tracked IDs (N)**, the last

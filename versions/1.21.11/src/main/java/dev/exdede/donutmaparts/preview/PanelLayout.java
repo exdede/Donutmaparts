@@ -74,6 +74,29 @@ public final class PanelLayout {
         return new Point(clamp(x, 0, screenW - boxW), clamp(y, 0, screenH - boxH));
     }
 
+    /**
+     * The largest picture size, up to the configured one, whose box still
+     * fits where the panel goes: the screen height always, and for left or
+     * right of the GUI the wider of the two side gaps (place() picks the side
+     * with room). extraW and extraH are the box's size minus the picture,
+     * i.e. frame, padding and text lines. Never below minSize, so a tiny
+     * window degrades to a small preview rather than none.
+     */
+    public static int fitSize(PreviewOptions.PanelPosition position, int configured, int minSize,
+                              int screenW, int screenH, int guiX, int guiW,
+                              int extraW, int extraH, int margin) {
+        int maxH = screenH - 2 * margin - extraH;
+        int maxW = screenW - 2 * margin - extraW;
+        if (position == PreviewOptions.PanelPosition.RIGHT_OF_GUI
+                || position == PreviewOptions.PanelPosition.LEFT_OF_GUI) {
+            int right = screenW - (guiX + guiW) - 2 * margin;
+            int left = guiX - 2 * margin;
+            maxW = Math.max(left, right) - extraW;
+        }
+        int fit = Math.min(configured, Math.min(maxW, maxH));
+        return Math.max(minSize, fit);
+    }
+
     private static int clamp(int value, int min, int max) {
         if (max < min) return min;
         return Math.max(min, Math.min(max, value));

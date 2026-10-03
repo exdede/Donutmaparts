@@ -100,6 +100,26 @@ public final class PreviewOptions {
         @Override public IConfigOptionListEntry fromString(String value) { return parse(values(), value, ALL_SCREENS); }
     }
 
+    /** What surrounds the picture. */
+    public enum FrameStyle implements IConfigOptionListEntry {
+        MAP_PAPER("map_paper", "Map paper (vanilla)"),
+        FLAT("flat", "Flat border"),
+        NONE("none", "No frame");
+
+        private final String configString;
+        private final String displayName;
+
+        FrameStyle(String configString, String displayName) {
+            this.configString = configString;
+            this.displayName = displayName;
+        }
+
+        @Override public String getStringValue() { return this.configString; }
+        @Override public String getDisplayName() { return this.displayName; }
+        @Override public IConfigOptionListEntry cycle(boolean forward) { return cycleOf(values(), ordinal(), forward); }
+        @Override public IConfigOptionListEntry fromString(String value) { return parse(values(), value, MAP_PAPER); }
+    }
+
     /** Text line under the preview. */
     public enum Label implements IConfigOptionListEntry {
         NONE("none", "No label"),

@@ -72,4 +72,26 @@ class PanelLayoutTest {
             0, 0, 50, 50, 300, 300, 0, 0, 6);
         assertEquals(new PanelLayout.Point(0, 0), p);
     }
+
+    @Test
+    void fitKeepsTheConfiguredSizeWhenThereIsRoom() {
+        assertEquals(100, PanelLayout.fitSize(PanelPosition.TOP_LEFT, 100, 32, 480, 270, 152, 176, 10, 20, 6));
+    }
+
+    @Test
+    void fitShrinksToTheScreenHeight() {
+        // 180 tall screen, 30 of frame and text, 6 margin each side: 138 left.
+        assertEquals(138, PanelLayout.fitSize(PanelPosition.TOP_LEFT, 160, 32, 320, 180, 72, 176, 10, 30, 6));
+    }
+
+    @Test
+    void fitShrinksToTheWiderSideGap() {
+        // GUI 176 wide at x=72 on a 320 screen: 72 right gap, 72 left gap, minus margins and frame.
+        assertEquals(50, PanelLayout.fitSize(PanelPosition.RIGHT_OF_GUI, 160, 32, 320, 400, 72, 176, 10, 30, 6));
+    }
+
+    @Test
+    void fitNeverGoesBelowTheMinimum() {
+        assertEquals(32, PanelLayout.fitSize(PanelPosition.LEFT_OF_GUI, 160, 32, 200, 400, 10, 180, 10, 30, 6));
+    }
 }

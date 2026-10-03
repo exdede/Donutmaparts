@@ -26,6 +26,14 @@ class PreviewTextTest {
     }
 
     @Test
+    void creditOnlyForWallPictures() {
+        assertEquals("via exdede.xyz/maparts", PreviewText.credit(Source.WALL, true));
+        assertNull(PreviewText.credit(Source.WALL, false));
+        assertNull(PreviewText.credit(Source.LOCAL, true));
+        assertNull(PreviewText.credit(Source.LOADING, true));
+    }
+
+    @Test
     void placeholdersOnlyWithoutAPicture() {
         assertNull(PreviewText.placeholder(Source.LOCAL));
         assertNull(PreviewText.placeholder(Source.WALL));

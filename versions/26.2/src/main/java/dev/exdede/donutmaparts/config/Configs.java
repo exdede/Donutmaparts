@@ -120,46 +120,50 @@ public class Configs implements IConfigHandler {
             "previewScope", PreviewOptions.Scope.ALL_SCREENS,
             "Where previews appear: every inventory screen, only containers (chests, shulkers, server GUIs), or only the Auction House");
         public static final ConfigInteger TOOLTIP_SIZE = new ConfigInteger(
-            "tooltipSize", 96, 32, 256, "Size in GUI pixels of the picture inside the tooltip. 128 is one map pixel per GUI pixel");
+            "tooltipSize", 64, 32, 256, "Size in GUI pixels of the picture inside the tooltip. 128 is one map pixel per GUI pixel");
         public static final ConfigInteger PANEL_SIZE = new ConfigInteger(
-            "panelSize", 160, 32, 512, "Size in GUI pixels of the side panel picture");
+            "panelSize", 128, 32, 512, "Size in GUI pixels of the side panel picture. Shrinks automatically when there is not enough room");
         public static final ConfigOptionList PANEL_POSITION = new ConfigOptionList(
             "panelPosition", PreviewOptions.PanelPosition.RIGHT_OF_GUI,
             "Where the side panel goes. Next-to-GUI positions flip sides automatically when there is no room");
         public static final ConfigInteger PANEL_MARGIN = new ConfigInteger(
             "panelMargin", 6, 0, 64, "Gap in GUI pixels between the side panel and the GUI, cursor or screen edge");
-        public static final ConfigBoolean SHOW_BORDER = new ConfigBoolean(
-            "previewBorder", true, "Draw a frame around the preview");
+        public static final ConfigOptionList FRAME_STYLE = new ConfigOptionList(
+            "previewFrame", PreviewOptions.FrameStyle.MAP_PAPER,
+            "Map paper: the vanilla map background, like a map in an item frame.\nFlat border: a plain colored border.\nNo frame: just the picture");
         public static final ConfigColor BORDER_COLOR = new ConfigColor(
-            "previewBorderColor", "#FF5A5A5A", "Frame color (ARGB)");
+            "previewBorderColor", "#FF5A5A5A", "Flat border color (ARGB)");
         public static final ConfigInteger BORDER_WIDTH = new ConfigInteger(
-            "previewBorderWidth", 1, 1, 8, "Frame thickness in GUI pixels");
+            "previewBorderWidth", 1, 1, 8, "Flat border thickness in GUI pixels");
         public static final ConfigColor BACKGROUND_COLOR = new ConfigColor(
             "previewBackgroundColor", "#E0101010", "Color behind the picture, visible through transparent map pixels and around the side panel (ARGB)");
         public static final ConfigInteger PANEL_PADDING = new ConfigInteger(
             "panelPadding", 4, 0, 32, "Padding in GUI pixels between the side panel's frame and the picture");
         public static final ConfigOptionList LABEL = new ConfigOptionList(
-            "previewLabel", PreviewOptions.Label.MAP_ID, "Text under the picture: nothing, the map ID, or the map ID plus where the picture came from");
+            "previewLabel", PreviewOptions.Label.NONE, "Text under the picture: nothing, the map ID, or the map ID plus where the picture came from");
         public static final ConfigColor LABEL_COLOR = new ConfigColor(
             "previewLabelColor", "#FFAAAAAA", "Label text color (ARGB)");
         public static final ConfigBoolean HIDE_MAP_MARKERS = new ConfigBoolean(
             "hideMapMarkers", true, "Hide player arrows, banners and other markers on the preview");
         public static final ConfigBoolean REMOTE_FALLBACK = new ConfigBoolean(
             "remoteFallback", true,
-            "When the server has not sent the map's pixels (usual for Auction House listings), load the picture from the DonutMaparts wall instead");
+            "When the server has not sent this map's pixels, show its last captured picture from the DonutMaparts wall instead. The in-game map is always preferred when available");
+        public static final ConfigInteger REMOTE_DELAY_MILLIS = new ConfigInteger(
+            "remoteDelayMillis", 1000, 0, 10000,
+            "How long to wait for the server to send a map's pixels before asking the wall, in milliseconds");
+        public static final ConfigBoolean WALL_CREDIT = new ConfigBoolean(
+            "wallCredit", true, "Mark pictures that came from the wall with 'via exdede.xyz/maparts', since they may be older than the map in game");
         public static final ConfigBoolean REMOTE_ONLY_ON_DONUT = new ConfigBoolean(
             "remoteOnlyOnDonut", true, "Only use the wall fallback while connected to DonutSMP, since map IDs from other servers would match the wrong art");
-        public static final ConfigBoolean PREFETCH_VISIBLE = new ConfigBoolean(
-            "prefetchVisible", false, "Load wall pictures for every map in the open container up front, so hovering is instant. Uses more requests");
         public static final ConfigBoolean SHOW_PLACEHOLDER = new ConfigBoolean(
             "showPlaceholder", true, "Show a 'no preview' box when no picture is available, instead of nothing");
 
         public static final List<IConfigBase> OPTIONS = ImmutableList.of(
             PREVIEW_ENABLED, PREVIEW_MODE, PREVIEW_TRIGGER, PREVIEW_SCOPE,
             TOOLTIP_SIZE, PANEL_SIZE, PANEL_POSITION, PANEL_MARGIN,
-            SHOW_BORDER, BORDER_COLOR, BORDER_WIDTH, BACKGROUND_COLOR, PANEL_PADDING,
+            FRAME_STYLE, BORDER_COLOR, BORDER_WIDTH, BACKGROUND_COLOR, PANEL_PADDING,
             LABEL, LABEL_COLOR, HIDE_MAP_MARKERS,
-            REMOTE_FALLBACK, REMOTE_ONLY_ON_DONUT, PREFETCH_VISIBLE, SHOW_PLACEHOLDER);
+            REMOTE_FALLBACK, REMOTE_DELAY_MILLIS, REMOTE_ONLY_ON_DONUT, WALL_CREDIT, SHOW_PLACEHOLDER);
 
         public static final List<IConfigBase> GUI_OPTIONS = OPTIONS;
     }

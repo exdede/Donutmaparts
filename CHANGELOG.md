@@ -9,16 +9,19 @@ the actual picture before you buy it.
 
 - The picture shows inside the item tooltip, in a bigger side panel next to
   the open GUI, or both.
-- Auction House listings usually come without the map's pixels (the server
-  only sends those for maps in your own inventory or in nearby item frames),
-  so the mod falls back to the picture on the DonutMaparts wall. Only on
-  DonutSMP by default, and it can be switched off.
-- New Map Preview settings tab: preview size, panel size and position (next
-  to the GUI, any screen corner, or following the cursor), hold Shift, Ctrl
-  or Alt to show, where previews appear (everywhere, containers only, or
-  Auction House only), frame on or off with color and thickness, background
-  color, padding, map ID label and its color, hiding map markers, and
-  optional prefetch of every map on the page so hovering is instant.
+- The preview is the map as your game has it, drawn the same way an item
+  frame draws it, so it is always the current state of the map.
+- Only when your game has no data for a map at all does the mod fall back to
+  the newest capture of it on the DonutMaparts wall, after a short wait for
+  the server, and marks it "via exdede.xyz/maparts" since it may be older
+  than the map in game. DonutSMP only by default, and it can be switched off.
+- New Map Preview settings tab: preview size, panel size (shrinks to fit)
+  and position (next to the GUI, any screen corner, or following the
+  cursor), hold Shift, Ctrl or Alt to show, where previews appear
+  (everywhere, containers only, or Auction House only), frame style (vanilla
+  map paper, flat border with color and thickness, or none), background
+  color, padding, map ID label and its color, hiding map markers, and the
+  wall fallback's wait and credit line.
 - One button resets every preview setting back to default.
 - New unbound "Toggle Map Preview" keybind.
 

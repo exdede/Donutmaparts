@@ -29,6 +29,15 @@ public final class PreviewText {
         };
     }
 
+    /**
+     * Credit line for a picture that came from the wall rather than from the
+     * server, or null. Doubles as a heads-up that it is the last captured
+     * state, not necessarily what the map looks like right now.
+     */
+    public static String credit(Source source, boolean enabled) {
+        return enabled && source == Source.WALL ? "via exdede.xyz/maparts" : null;
+    }
+
     /** Placeholder text drawn in place of a picture, or null when there is a picture. */
     public static String placeholder(Source source) {
         return switch (source) {

@@ -56,15 +56,24 @@ public class HandledScreenMixin {
             MinecraftClient mc = MinecraftClient.getInstance();
             if (!MapPreviewGate.active(mc)) return;
 
-            MapPreviewRenderer.Box box = MapPreviewRenderer.resolve(mc, mapId,
-                Configs.Preview.PANEL_SIZE.getIntegerValue(), Configs.Preview.PANEL_PADDING.getIntegerValue());
+            PreviewOptions.PanelPosition position =
+                (PreviewOptions.PanelPosition) Configs.Preview.PANEL_POSITION.getOptionListValue();
+            int screenW = context.getScaledWindowWidth();
+            int screenH = context.getScaledWindowHeight();
+            int margin = Configs.Preview.PANEL_MARGIN.getIntegerValue();
+            int padding = Configs.Preview.PANEL_PADDING.getIntegerValue();
+            int size = Configs.Preview.PANEL_SIZE.getIntegerValue();
+            MapPreviewRenderer.Box box = MapPreviewRenderer.resolve(mc, mapId, size, padding);
             if (box == null) return;
-            PanelLayout.Point at = PanelLayout.place(
-                (PreviewOptions.PanelPosition) Configs.Preview.PANEL_POSITION.getOptionListValue(),
-                context.getScaledWindowWidth(), context.getScaledWindowHeight(),
+            // Shrink to the room actually available, so a big panel at a high
+            // GUI scale never runs off screen or over the GUI.
+            int fit = PanelLayout.fitSize(position, size, 32, screenW, screenH, this.x, this.backgroundWidth,
+                box.width() - size, box.height() - size, margin);
+            if (fit != size) box = MapPreviewRenderer.resolve(mc, mapId, fit, padding);
+            if (box == null) return;
+            PanelLayout.Point at = PanelLayout.place(position, screenW, screenH,
                 this.x, this.y, this.backgroundWidth, this.backgroundHeight,
-                box.width(), box.height(), mouseX, mouseY,
-                Configs.Preview.PANEL_MARGIN.getIntegerValue());
+                box.width(), box.height(), mouseX, mouseY, margin);
             context.createNewRootLayer();
             MapPreviewRenderer.draw(context, mc, box, at.x(), at.y());
         } catch (Throwable t) {
