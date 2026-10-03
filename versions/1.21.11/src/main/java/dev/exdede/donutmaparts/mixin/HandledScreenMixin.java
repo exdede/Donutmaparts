@@ -3,8 +3,13 @@ package dev.exdede.donutmaparts.mixin;
 import dev.exdede.donutmaparts.DonutMapartsMod;
 import dev.exdede.donutmaparts.capture.MapCaptureTracker;
 import dev.exdede.donutmaparts.config.Configs;
+import dev.exdede.donutmaparts.preview.MapPreviewGate;
+import dev.exdede.donutmaparts.preview.MapPreviewRenderer;
+import dev.exdede.donutmaparts.preview.PanelLayout;
+import dev.exdede.donutmaparts.preview.PreviewOptions;
 import dev.exdede.donutmaparts.queue.CaptureState;
 import dev.exdede.donutmaparts.tracking.MapTracker;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.component.DataComponentTypes;
@@ -12,13 +17,14 @@ import net.minecraft.component.type.MapIdComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Two overlays on map item slots.
+ * Two overlays on map item slots, plus the map preview side panel.
  *
  * The debug overlay is development only, active only with debugMode on. Colors
  * per state: gray unprocessed, yellow queued/uploading, green uploaded new,
@@ -27,9 +33,45 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * The tracking highlight is a user facing feature and is not tied to debugMode.
  * It pulses so a matched slot is findable in a double chest, and it draws after
  * the debug fill so the two never hide each other.
+ *
+ * The side panel draws at the end of render, on its own layer so slot items
+ * never show through it; the vanilla tooltip is drawn later still and stays
+ * on top.
  */
 @Mixin(HandledScreen.class)
 public class HandledScreenMixin {
+    @Shadow protected Slot focusedSlot;
+    @Shadow protected int x;
+    @Shadow protected int y;
+    @Shadow protected int backgroundWidth;
+    @Shadow protected int backgroundHeight;
+
+    @Inject(method = "render", at = @At("TAIL"))
+    private void donutmaparts$previewPanel(DrawContext context, int mouseX, int mouseY, float deltaTicks, CallbackInfo ci) {
+        try {
+            PreviewOptions.Mode mode = (PreviewOptions.Mode) Configs.Preview.PREVIEW_MODE.getOptionListValue();
+            if (!mode.panel() || this.focusedSlot == null) return;
+            MapIdComponent mapId = this.focusedSlot.getStack().get(DataComponentTypes.MAP_ID);
+            if (mapId == null) return;
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (!MapPreviewGate.active(mc)) return;
+
+            MapPreviewRenderer.Box box = MapPreviewRenderer.resolve(mc, mapId,
+                Configs.Preview.PANEL_SIZE.getIntegerValue(), Configs.Preview.PANEL_PADDING.getIntegerValue());
+            if (box == null) return;
+            PanelLayout.Point at = PanelLayout.place(
+                (PreviewOptions.PanelPosition) Configs.Preview.PANEL_POSITION.getOptionListValue(),
+                context.getScaledWindowWidth(), context.getScaledWindowHeight(),
+                this.x, this.y, this.backgroundWidth, this.backgroundHeight,
+                box.width(), box.height(), mouseX, mouseY,
+                Configs.Preview.PANEL_MARGIN.getIntegerValue());
+            context.createNewRootLayer();
+            MapPreviewRenderer.draw(context, mc, box, at.x(), at.y());
+        } catch (Throwable t) {
+            DonutMapartsMod.LOGGER.error("Unhandled exception in map preview panel", t);
+        }
+    }
+
     // Yarn 1.21.11: HandledScreen.drawSlot(DrawContext, Slot, int mouseX, int mouseY),
     // not (DrawContext, Slot) as originally assumed. Confirmed via bytecode: drawSlots
     // forwards its own mouseX/mouseY params straight through to drawSlot.

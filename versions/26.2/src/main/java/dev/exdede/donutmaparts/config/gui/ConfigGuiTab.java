@@ -5,7 +5,8 @@ import fi.dy.masa.malilib.util.StringUtils;
 /** Tabs across the top of the mod's config screen. */
 public enum ConfigGuiTab {
     GENERAL("donutmaparts.gui.button.config_gui.general"),
-    TRACKING("donutmaparts.gui.button.config_gui.tracking");
+    TRACKING("donutmaparts.gui.button.config_gui.tracking"),
+    PREVIEW("donutmaparts.gui.button.config_gui.preview");
 
     private final String translationKey;
 

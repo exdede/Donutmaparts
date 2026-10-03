@@ -5,6 +5,10 @@ import dev.exdede.donutmaparts.capture.MapCaptureTracker;
 import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.config.gui.GuiConfig;
 import dev.exdede.donutmaparts.debug.DebugLog;
+import dev.exdede.donutmaparts.preview.MapPreviewPrefetch;
+import dev.exdede.donutmaparts.preview.MapPreviewTextures;
+import dev.exdede.donutmaparts.preview.MapPreviewTooltipComponent;
+import dev.exdede.donutmaparts.preview.MapPreviewTooltipData;
 import dev.exdede.donutmaparts.queue.FailedQueueStore;
 import dev.exdede.donutmaparts.queue.MapCapture;
 import dev.exdede.donutmaparts.queue.UploadQueue;
@@ -18,6 +22,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -38,6 +43,7 @@ public class DonutMapartsMod implements ClientModInitializer {
     private FailedQueueStore failedStore;
     private int tickCounter;
     private static KeyMapping openConfigKey;
+    private static KeyMapping togglePreviewKey;
 
     @Override
     public void onInitializeClient() {
@@ -53,6 +59,15 @@ public class DonutMapartsMod implements ClientModInitializer {
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_UNKNOWN,
             new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, "main"))));
+        // Shares the category above rather than building a second one for the same id.
+        togglePreviewKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.donutmaparts.toggle_preview",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            openConfigKey.getCategory()));
+
+        ClientTooltipComponentCallback.EVENT.register(data ->
+            data instanceof MapPreviewTooltipData preview ? new MapPreviewTooltipComponent(preview) : null);
 
         Path dataDir = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID);
         UploadQueue queue = new UploadQueue(System::currentTimeMillis);
@@ -75,15 +90,25 @@ public class DonutMapartsMod implements ClientModInitializer {
             persistFailed(queue);
             UploadSession.INSTANCE.onLeave();
             if (MapCaptureTracker.INSTANCE != null) MapCaptureTracker.INSTANCE.reset();
+            client.execute(MapPreviewTextures.INSTANCE::clear);
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openConfigKey.consumeClick()) {
                 client.gui.setScreen(new GuiConfig());
             }
+            while (togglePreviewKey.consumeClick()) {
+                boolean on = !Configs.Preview.PREVIEW_ENABLED.getBooleanValue();
+                Configs.Preview.PREVIEW_ENABLED.setBooleanValue(on);
+                Configs.saveToFile();
+                if (client.player != null) {
+                    client.player.sendOverlayMessage(Component.literal("Map preview " + (on ? "on" : "off")));
+                }
+            }
             if (MapTracker.INSTANCE != null) {
                 MapTracker.INSTANCE.tickScreen(client);
             }
+            MapPreviewPrefetch.tick(client);
             if (MapCaptureTracker.INSTANCE != null) {
                 MapCaptureTracker.INSTANCE.tick(System.currentTimeMillis(),
                     Configs.General.SETTLE_DELAY_MILLIS.getIntegerValue());

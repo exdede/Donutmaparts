@@ -10,5 +10,8 @@
   "donutmaparts.gui.title.add_id": "Add a map ID to track",
   "donutmaparts.gui.title.bulk_add": "Paste map IDs, separated by commas or newlines",
   "donutmaparts.gui.button.link_account": "Link Account",
-  "donutmaparts.gui.title.link_account": "Enter your account link code"
+  "donutmaparts.gui.title.link_account": "Enter your account link code",
+  "donutmaparts.gui.button.config_gui.preview": "Map Preview",
+  "donutmaparts.gui.button.reset_preview": "Reset preview settings",
+  "key.donutmaparts.toggle_preview": "Toggle Map Preview"
 }

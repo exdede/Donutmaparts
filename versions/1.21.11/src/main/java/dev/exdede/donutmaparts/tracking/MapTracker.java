@@ -273,8 +273,15 @@ public final class MapTracker {
      * generic 9xN handler type on the wire and are only told apart by title,
      * which classify() handles from here.
      */
-    private static TrackingScope.ContainerKind classifyContainerKind(HandledScreen<?> screen) {
-        ScreenHandlerType<?> type = screen.getScreenHandler().getType();
+    public static TrackingScope.ContainerKind classifyContainerKind(HandledScreen<?> screen) {
+        // The player inventory (and creative) handler has no registered type and
+        // throws from getType() rather than returning null.
+        ScreenHandlerType<?> type;
+        try {
+            type = screen.getScreenHandler().getType();
+        } catch (UnsupportedOperationException e) {
+            return TrackingScope.ContainerKind.OTHER;
+        }
         if (type == ScreenHandlerType.SHULKER_BOX) return TrackingScope.ContainerKind.SHULKER_BOX;
         if (isGenericContainer(type)) return TrackingScope.ContainerKind.GENERIC_CONTAINER;
         return TrackingScope.ContainerKind.OTHER;

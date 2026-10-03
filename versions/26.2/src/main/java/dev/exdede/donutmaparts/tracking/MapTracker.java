@@ -273,8 +273,15 @@ public final class MapTracker {
      * 9xN menu type on the wire and are only told apart by title, which
      * classify() handles from here.
      */
-    private static TrackingScope.ContainerKind classifyContainerKind(AbstractContainerScreen<?> screen) {
-        MenuType<?> type = screen.getMenu().getType();
+    public static TrackingScope.ContainerKind classifyContainerKind(AbstractContainerScreen<?> screen) {
+        // The player inventory (and creative) menu has no registered type and
+        // throws from getType() rather than returning null.
+        MenuType<?> type;
+        try {
+            type = screen.getMenu().getType();
+        } catch (UnsupportedOperationException e) {
+            return TrackingScope.ContainerKind.OTHER;
+        }
         if (type == MenuType.SHULKER_BOX) return TrackingScope.ContainerKind.SHULKER_BOX;
         if (isGenericContainer(type)) return TrackingScope.ContainerKind.GENERIC_CONTAINER;
         return TrackingScope.ContainerKind.OTHER;

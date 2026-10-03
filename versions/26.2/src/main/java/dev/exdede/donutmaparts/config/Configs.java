@@ -11,12 +11,14 @@ import fi.dy.masa.malilib.config.ConfigUtils;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
+import fi.dy.masa.malilib.config.options.ConfigColor;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import fi.dy.masa.malilib.config.options.ConfigStringList;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import dev.exdede.donutmaparts.DonutMapartsMod;
+import dev.exdede.donutmaparts.preview.PreviewOptions;
 
 public class Configs implements IConfigHandler {
     private static final String CONFIG_FILE_NAME = DonutMapartsMod.MOD_ID + ".json";
@@ -106,6 +108,62 @@ public class Configs implements IConfigHandler {
             TRACK_AUCTION_HOUSE, TRACK_OTHER, AUTO_COLLECT);
     }
 
+    public static class Preview {
+        public static final ConfigBoolean PREVIEW_ENABLED = new ConfigBoolean(
+            "previewEnabled", true, "Show a picture of the map when you hover a filled map in any inventory, including the Auction House");
+        public static final ConfigOptionList PREVIEW_MODE = new ConfigOptionList(
+            "previewMode", PreviewOptions.Mode.TOOLTIP,
+            "Inside tooltip: the picture sits inside the item tooltip.\nSide panel: a bigger picture next to the open GUI.\nBoth: both at once");
+        public static final ConfigOptionList PREVIEW_TRIGGER = new ConfigOptionList(
+            "previewTrigger", PreviewOptions.Trigger.ALWAYS, "Show the preview always, or only while holding a key");
+        public static final ConfigOptionList PREVIEW_SCOPE = new ConfigOptionList(
+            "previewScope", PreviewOptions.Scope.ALL_SCREENS,
+            "Where previews appear: every inventory screen, only containers (chests, shulkers, server GUIs), or only the Auction House");
+        public static final ConfigInteger TOOLTIP_SIZE = new ConfigInteger(
+            "tooltipSize", 96, 32, 256, "Size in GUI pixels of the picture inside the tooltip. 128 is one map pixel per GUI pixel");
+        public static final ConfigInteger PANEL_SIZE = new ConfigInteger(
+            "panelSize", 160, 32, 512, "Size in GUI pixels of the side panel picture");
+        public static final ConfigOptionList PANEL_POSITION = new ConfigOptionList(
+            "panelPosition", PreviewOptions.PanelPosition.RIGHT_OF_GUI,
+            "Where the side panel goes. Next-to-GUI positions flip sides automatically when there is no room");
+        public static final ConfigInteger PANEL_MARGIN = new ConfigInteger(
+            "panelMargin", 6, 0, 64, "Gap in GUI pixels between the side panel and the GUI, cursor or screen edge");
+        public static final ConfigBoolean SHOW_BORDER = new ConfigBoolean(
+            "previewBorder", true, "Draw a frame around the preview");
+        public static final ConfigColor BORDER_COLOR = new ConfigColor(
+            "previewBorderColor", "#FF5A5A5A", "Frame color (ARGB)");
+        public static final ConfigInteger BORDER_WIDTH = new ConfigInteger(
+            "previewBorderWidth", 1, 1, 8, "Frame thickness in GUI pixels");
+        public static final ConfigColor BACKGROUND_COLOR = new ConfigColor(
+            "previewBackgroundColor", "#E0101010", "Color behind the picture, visible through transparent map pixels and around the side panel (ARGB)");
+        public static final ConfigInteger PANEL_PADDING = new ConfigInteger(
+            "panelPadding", 4, 0, 32, "Padding in GUI pixels between the side panel's frame and the picture");
+        public static final ConfigOptionList LABEL = new ConfigOptionList(
+            "previewLabel", PreviewOptions.Label.MAP_ID, "Text under the picture: nothing, the map ID, or the map ID plus where the picture came from");
+        public static final ConfigColor LABEL_COLOR = new ConfigColor(
+            "previewLabelColor", "#FFAAAAAA", "Label text color (ARGB)");
+        public static final ConfigBoolean HIDE_MAP_MARKERS = new ConfigBoolean(
+            "hideMapMarkers", true, "Hide player arrows, banners and other markers on the preview");
+        public static final ConfigBoolean REMOTE_FALLBACK = new ConfigBoolean(
+            "remoteFallback", true,
+            "When the server has not sent the map's pixels (usual for Auction House listings), load the picture from the DonutMaparts wall instead");
+        public static final ConfigBoolean REMOTE_ONLY_ON_DONUT = new ConfigBoolean(
+            "remoteOnlyOnDonut", true, "Only use the wall fallback while connected to DonutSMP, since map IDs from other servers would match the wrong art");
+        public static final ConfigBoolean PREFETCH_VISIBLE = new ConfigBoolean(
+            "prefetchVisible", false, "Load wall pictures for every map in the open container up front, so hovering is instant. Uses more requests");
+        public static final ConfigBoolean SHOW_PLACEHOLDER = new ConfigBoolean(
+            "showPlaceholder", true, "Show a 'no preview' box when no picture is available, instead of nothing");
+
+        public static final List<IConfigBase> OPTIONS = ImmutableList.of(
+            PREVIEW_ENABLED, PREVIEW_MODE, PREVIEW_TRIGGER, PREVIEW_SCOPE,
+            TOOLTIP_SIZE, PANEL_SIZE, PANEL_POSITION, PANEL_MARGIN,
+            SHOW_BORDER, BORDER_COLOR, BORDER_WIDTH, BACKGROUND_COLOR, PANEL_PADDING,
+            LABEL, LABEL_COLOR, HIDE_MAP_MARKERS,
+            REMOTE_FALLBACK, REMOTE_ONLY_ON_DONUT, PREFETCH_VISIBLE, SHOW_PLACEHOLDER);
+
+        public static final List<IConfigBase> GUI_OPTIONS = OPTIONS;
+    }
+
     public static void loadFromFile() {
         // NOTE: FileUtils.getConfigDirectory() returns java.nio.file.Path in malilib
         // 0.27.16, not java.io.File as older malilib versions did. The File-based
@@ -119,6 +177,7 @@ public class Configs implements IConfigHandler {
                     JsonObject root = element.getAsJsonObject();
                     ConfigUtils.readConfigBase(root, "General", General.OPTIONS);
                     ConfigUtils.readConfigBase(root, "Tracking", Tracking.OPTIONS);
+                    ConfigUtils.readConfigBase(root, "Preview", Preview.OPTIONS);
                 }
             }
             catch (RuntimeException e) {
@@ -139,6 +198,7 @@ public class Configs implements IConfigHandler {
         JsonObject root = new JsonObject();
         ConfigUtils.writeConfigBase(root, "General", General.OPTIONS);
         ConfigUtils.writeConfigBase(root, "Tracking", Tracking.OPTIONS);
+        ConfigUtils.writeConfigBase(root, "Preview", Preview.OPTIONS);
         JsonUtils.writeJsonToFile(root, dir.resolve(CONFIG_FILE_NAME));
     }
 

@@ -48,6 +48,21 @@ Want alerts only for certain containers? Flip off chest, ender chest, shulker
 box, Auction House or "other" individually in the Tracking tab. All five
 start on, so nothing changes until you narrow it yourself.
 
+## Map preview
+
+Hover any filled map, in a chest, a shulker or the **Auction House**, and the
+mod shows you the actual picture: inside the tooltip, in a bigger panel next to
+the GUI, or both.
+
+If the server already sent the map's pixels (it has been in your inventory or
+in an item frame near you), the preview is drawn from that. Auction House
+listings normally come without pixels, so the mod loads the picture from the
+DonutMaparts wall instead, which works for any mapart the wall has already
+seen. That fallback is DonutSMP-only by default and can be turned off.
+
+Everything is configurable in the **Map Preview** tab, and the unbound
+"Toggle Map Preview" keybind flips it on and off.
+
 ## Account linking and collections
 
 Paste the link code from **https://exdede.xyz/maparts** into the settings
@@ -87,6 +102,30 @@ Open the config three ways:
 | Track: other | on | Alert for matches found in any other container |
 | Auto collect | off | Add newly seen maps to your online collection while on DonutSMP (needs a linked account) |
 
+**Map Preview tab:**
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Preview enabled | on | Master toggle for map previews |
+| Preview mode | Inside tooltip | Inside tooltip, side panel, or both |
+| Trigger | Always | Always, or only while holding Shift, Ctrl or Alt |
+| Scope | All inventories | All inventories, containers only, or Auction House only |
+| Tooltip size | 96 | Picture size inside the tooltip, 32 to 256 GUI pixels (128 = one map pixel per GUI pixel) |
+| Panel size | 160 | Picture size in the side panel, 32 to 512 |
+| Panel position | Right of GUI | Left/right/above/below the GUI, any screen corner, or follow the cursor. Flips sides when there is no room |
+| Panel margin | 6 | Gap between the panel and the GUI, cursor or screen edge |
+| Panel padding | 4 | Space between the panel frame and the picture |
+| Frame | on | Draw a frame around the preview |
+| Frame color / thickness | gray, 1 | ARGB color and 1 to 8 pixels |
+| Background color | near black | Shows through transparent map pixels and around the panel |
+| Label | Map ID | Nothing, the map ID, or the map ID plus where the picture came from |
+| Label color | light gray | ARGB color of the label |
+| Hide map markers | on | Hide player arrows and banners on the preview |
+| Wall fallback | on | Load the picture from the DonutMaparts wall when the server sent no pixels |
+| Wall fallback only on DonutSMP | on | Map IDs from other servers would match the wrong art |
+| Prefetch whole page | off | Load every map in the open container up front so hovering is instant |
+| Show placeholder | on | "No preview" box when there is no picture, instead of nothing |
+
 Plus three buttons: **Add ID**, **Bulk Add** and **Tracked IDs (N)**, the last
 of which opens the list editor where you can remove entries one by one, and a
 link code field to connect your web account.
@@ -94,7 +133,8 @@ link code field to connect your web account.
 ## Privacy and takedowns
 
 The mod only activates on DonutSMP. It sends a per-map fingerprint plus the map
-pixels for new maps, nothing else. It never transmits a precomputed hash: the
+pixels for new maps, nothing else. Map preview's wall fallback reads public
+wall pictures by map ID, without your token or identity, and can be turned off. It never transmits a precomputed hash: the
 server recomputes everything and decides what is actually new.
 
 Want a mapart of yours off the wall? Contact me via

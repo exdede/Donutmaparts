@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0
+
+### Map preview
+
+Hover a filled map in any inventory, including the Auction House, and see
+the actual picture before you buy it.
+
+- The picture shows inside the item tooltip, in a bigger side panel next to
+  the open GUI, or both.
+- Auction House listings usually come without the map's pixels (the server
+  only sends those for maps in your own inventory or in nearby item frames),
+  so the mod falls back to the picture on the DonutMaparts wall. Only on
+  DonutSMP by default, and it can be switched off.
+- New Map Preview settings tab: preview size, panel size and position (next
+  to the GUI, any screen corner, or following the cursor), hold Shift, Ctrl
+  or Alt to show, where previews appear (everywhere, containers only, or
+  Auction House only), frame on or off with color and thickness, background
+  color, padding, map ID label and its color, hiding map markers, and
+  optional prefetch of every map on the page so hovering is instant.
+- One button resets every preview setting back to default.
+- New unbound "Toggle Map Preview" keybind.
+
 ## 0.3.1
 
 ### Fixed

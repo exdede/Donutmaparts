@@ -43,9 +43,11 @@ public class GuiConfig extends GuiConfigsBase {
 
     @Override
     public List<ConfigOptionWrapper> getConfigs() {
-        List<fi.dy.masa.malilib.config.IConfigBase> options = tab == ConfigGuiTab.TRACKING
-            ? Configs.Tracking.GUI_OPTIONS
-            : Configs.General.GUI_OPTIONS;
+        List<fi.dy.masa.malilib.config.IConfigBase> options = switch (tab) {
+            case TRACKING -> Configs.Tracking.GUI_OPTIONS;
+            case PREVIEW -> Configs.Preview.GUI_OPTIONS;
+            default -> Configs.General.GUI_OPTIONS;
+        };
         return ConfigOptionWrapper.createFor(options);
     }
 
@@ -61,6 +63,9 @@ public class GuiConfig extends GuiConfigsBase {
 
         if (tab == ConfigGuiTab.TRACKING) {
             createTrackingButtons(10, 48);
+        }
+        else if (tab == ConfigGuiTab.PREVIEW) {
+            createPreviewButtons(10, 48);
         }
         else {
             createGeneralButtons(10, 48);
@@ -118,6 +123,25 @@ public class GuiConfig extends GuiConfigsBase {
         Configs.saveToFile();
         DebugLog.tracking("added " + parsed.size() + " IDs, " + merged.size() + " now tracked");
         return true;
+    }
+
+    /**
+     * One reset button: the Preview tab has the most knobs in the mod, and
+     * malilib only offers per-option resets, so getting back to the stock look
+     * after experimenting would otherwise take twenty clicks.
+     */
+    private void createPreviewButtons(int x, int y) {
+        ButtonGeneric reset = new ButtonGeneric(x, y, -1, 20,
+            StringUtils.translate("donutmaparts.gui.button.reset_preview"));
+        this.addButton(reset, (pressed, mouseButton) -> {
+            for (fi.dy.masa.malilib.config.IConfigBase option : Configs.Preview.OPTIONS) {
+                if (option instanceof fi.dy.masa.malilib.config.IConfigResettable resettable) {
+                    resettable.resetToDefault();
+                }
+            }
+            Configs.saveToFile();
+            GuiBase.openGui(new GuiConfig(this.getParent()));
+        });
     }
 
     private void createGeneralButtons(int x, int y) {
