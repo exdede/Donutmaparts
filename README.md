@@ -10,7 +10,7 @@ should not.
 
 ## Install
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**, **26.1** or **26.2**, and take the matching build of the mod.
+1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**, **26.1**, **26.2** or **26.3**, and take the matching build of the mod.
 2. Drop these into your `mods` folder:
    - [DonutMaparts](https://modrinth.com/mod/donutmaparts) [CurseForge mirror](https://www.curseforge.com/minecraft/mc-mods/donutmaparts)
    - [Fabric API](https://modrinth.com/mod/fabric-api)
@@ -151,12 +151,13 @@ One self-contained Gradle build per Minecraft version, under `versions/`:
 | `versions/1.21.11` | 1.21.11 | 21 | Yarn 1.21.11+build.6 |
 | `versions/26.1` | 26.1.2 | 25 | Mojang official |
 | `versions/26.2` | 26.2 | 25 | Mojang official |
+| `versions/26.3` | 26.3 | 25 | Mojang official |
 
 ```bash
 cd versions/1.21.11
 JAVA_HOME=/path/to/jdk-21 ./gradlew build
 
-cd versions/26.2
+cd versions/26.3
 JAVA_HOME=/path/to/jdk-25 ./gradlew build
 ```
 

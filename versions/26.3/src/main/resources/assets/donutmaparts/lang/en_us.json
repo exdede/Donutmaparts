@@ -1,0 +1,17 @@
+{
+  "key.category.donutmaparts.main": "DonutMaparts",
+  "key.donutmaparts.open_config": "Open Settings",
+  "donutmaparts.gui.title.configs": "DonutMaparts Settings",
+  "donutmaparts.gui.button.config_gui.general": "General",
+  "donutmaparts.gui.button.config_gui.tracking": "Tracking",
+  "donutmaparts.gui.button.add_id": "Add ID",
+  "donutmaparts.gui.button.bulk_add": "Bulk Add",
+  "donutmaparts.gui.button.tracked_ids": "Tracked IDs (%d)",
+  "donutmaparts.gui.title.add_id": "Add a map ID to track",
+  "donutmaparts.gui.title.bulk_add": "Paste map IDs, separated by commas or newlines",
+  "donutmaparts.gui.button.link_account": "Link Account",
+  "donutmaparts.gui.title.link_account": "Enter your account link code",
+  "donutmaparts.gui.button.config_gui.preview": "Map Preview",
+  "donutmaparts.gui.button.reset_preview": "Reset preview settings",
+  "key.donutmaparts.toggle_preview": "Toggle Map Preview"
+}

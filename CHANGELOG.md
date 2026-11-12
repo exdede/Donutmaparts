@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Minecraft 26.3 support
+
+- New build for Minecraft 26.3 (malilib 0.30.2, Mod Menu 21.0.0).
+- The Add ID, Bulk Add and Link Account boxes take typing as soon as they
+  open on 26.3. Without this they showed a cursor but ignored the keyboard
+  until clicked, because 26.3 changed how the game reads typed text.
+
 ## 0.4.0
 
 ### Map preview
