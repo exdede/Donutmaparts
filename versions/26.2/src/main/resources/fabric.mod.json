@@ -6,7 +6,7 @@
   "description": "Auto-detects maparts on DonutSMP and uploads them to the mapart wall.",
   "authors": ["ExDeDe"],
   "contact": {
-    "homepage": "https://modrinth.com/mod/donutmaparts",
+    "homepage": "https://exdede.xyz/maparts/mod",
     "sources": "https://github.com/exdede/Donutmaparts",
     "issues": "https://github.com/exdede/Donutmaparts/issues"
   },
