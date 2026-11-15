@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 for Minecraft 26.3
 
-### Minecraft 26.3 support
+Added to the 0.4.0 release on 2026-11-12. Same features as the other 0.4.0
+builds.
 
 - New build for Minecraft 26.3 (malilib 0.30.2, Mod Menu 21.0.0).
 - The Add ID, Bulk Add and Link Account boxes take typing as soon as they
