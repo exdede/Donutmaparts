@@ -8,12 +8,12 @@ import dev.exdede.donutmaparts.net.BackendClient;
 import dev.exdede.donutmaparts.net.LinkCodes;
 import dev.exdede.donutmaparts.session.LinkNotifier;
 import dev.exdede.donutmaparts.session.UploadSession;
+import dev.exdede.donutmaparts.tracking.TrackedGroups;
 import dev.exdede.donutmaparts.tracking.TrackedIds;
 import fi.dy.masa.malilib.gui.GuiBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
-import fi.dy.masa.malilib.gui.GuiStringListEdit;
 import fi.dy.masa.malilib.gui.GuiTextInput;
-import fi.dy.masa.malilib.gui.GuiTextInputMultiLine;
+import fi.dy.masa.malilib.gui.Message;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.interfaces.IStringConsumerFeedback;
 import fi.dy.masa.malilib.util.StringUtils;
@@ -28,8 +28,8 @@ import net.minecraft.client.gui.screens.Screen;
  *
  * Tabs follow masa's own pattern from litematica: a static current-tab field, a
  * row of ButtonGeneric built in initGui, and getConfigs() switching on it. The
- * tracked ID list is not one of the rendered options; it gets its own button row
- * so the tab can offer single add and bulk paste next to the list editor.
+ * tracked groups are not rendered options; they get their own button row and
+ * their own screen, GuiTrackedGroups.
  */
 public class GuiConfig extends GuiConfigsBase {
     private static ConfigGuiTab tab = ConfigGuiTab.GENERAL;
@@ -84,6 +84,12 @@ public class GuiConfig extends GuiConfigsBase {
     }
 
     private void createTrackingButtons(int x, int y) {
+        ButtonGeneric paste = new ButtonGeneric(x, y, -1, 20,
+            StringUtils.translate("donutmaparts.gui.button.paste_ids"));
+        paste.setHoverStrings(StringUtils.translate("donutmaparts.gui.hover.paste_ids"));
+        this.addButton(paste, (pressed, mouseButton) -> onIdsEntered(Minecraft.getInstance().keyboardHandler.getClipboard()));
+        x += paste.getWidth() + 2;
+
         ButtonGeneric add = new ButtonGeneric(x, y, -1, 20,
             StringUtils.translate("donutmaparts.gui.button.add_id"));
         // The IStringConsumerFeedback cast is required, not decorative: both text
@@ -91,45 +97,41 @@ public class GuiConfig extends GuiConfigsBase {
         // reference is compatible with a void target too, so the call is ambiguous
         // without it.
         this.addButton(add, (pressed, mouseButton) -> GuiBase.openGui(textInput(
-            32, "donutmaparts.gui.title.add_id", this,
-            (IStringConsumerFeedback) this::onIdsEntered)));
+            65536, "donutmaparts.gui.title.add_id", "", this,
+            // Always false: on true malilib reopens this screen over the name
+            // dialog onIdsEntered just opened. False on bad input keeps it open.
+            (IStringConsumerFeedback) text -> {
+                onIdsEntered(text);
+                return false;
+            })));
         x += add.getWidth() + 2;
 
-        ButtonGeneric bulk = new ButtonGeneric(x, y, -1, 20,
-            StringUtils.translate("donutmaparts.gui.button.bulk_add"));
-        this.addButton(bulk, (pressed, mouseButton) -> GuiBase.openGui(new GuiTextInputMultiLine(
-            8192, 12, 64, "donutmaparts.gui.title.bulk_add", "", this,
-            (IStringConsumerFeedback) this::onIdsEntered) {
-                @Override
-                public void initGui() {
-                    super.initGui();
-                    refocus(this.textField);
-                }
-            }));
-        x += bulk.getWidth() + 2;
-
-        int count = TrackedIds.toIdSet(Configs.Tracking.TRACKED_MAP_IDS.getStrings()).size();
+        List<TrackedGroups.Group> groups = TrackedGroups.decode(Configs.Tracking.TRACKED_GROUPS.getStrings());
         ButtonGeneric edit = new ButtonGeneric(x, y, -1, 20,
-            StringUtils.translate("donutmaparts.gui.button.tracked_ids", count));
-        this.addButton(edit, (pressed, mouseButton) -> GuiBase.openGui(new GuiStringListEdit(
-            Configs.Tracking.TRACKED_MAP_IDS, this, null, this)));
+            StringUtils.translate("donutmaparts.gui.button.tracked_groups", groups.size(), TrackedGroups.idCount(groups)));
+        this.addButton(edit, (pressed, mouseButton) -> GuiBase.openGui(new GuiTrackedGroups(this)));
     }
 
     /**
-     * Shared by the single add and bulk add inputs: both are just text that gets
-     * parsed, deduped and merged. Returning false keeps the input screen open,
-     * which is how the user finds out they typed something that is not a map ID.
+     * Shared by the clipboard button and the typed input: parse the IDs, then
+     * ask what to call the new group.
      */
-    private boolean onIdsEntered(String text) {
+    private void onIdsEntered(String text) {
         List<Integer> parsed = TrackedIds.parseIds(text);
-        if (parsed.isEmpty()) return false;
-
-        List<String> merged = TrackedIds.merge(
-            Configs.Tracking.TRACKED_MAP_IDS.getStrings(), parsed);
-        Configs.Tracking.TRACKED_MAP_IDS.setStrings(merged);
-        Configs.saveToFile();
-        DebugLog.tracking("added " + parsed.size() + " IDs, " + merged.size() + " now tracked");
-        return true;
+        if (parsed.isEmpty()) {
+            this.addMessage(Message.MessageType.ERROR, 4000, "donutmaparts.gui.message.no_ids");
+            return;
+        }
+        int existing = TrackedGroups.decode(Configs.Tracking.TRACKED_GROUPS.getStrings()).size();
+        GuiBase.openGui(textInput(64, "donutmaparts.gui.title.group_name",
+            TrackedGroups.defaultName(existing), this,
+            (IStringConsumerFeedback) name -> {
+                Configs.Tracking.TRACKED_GROUPS.setStrings(
+                    TrackedGroups.add(Configs.Tracking.TRACKED_GROUPS.getStrings(), name, parsed));
+                Configs.saveToFile();
+                DebugLog.tracking("added a group of " + parsed.size() + " IDs");
+                return true;
+            }));
     }
 
     /**
@@ -154,7 +156,10 @@ public class GuiConfig extends GuiConfigsBase {
     private void createGeneralButtons(int x, int y) {
         ButtonGeneric link = new ButtonGeneric(x, y, -1, 20,
             StringUtils.translate("donutmaparts.gui.button.link_account"));
+        link.setHoverStrings(StringUtils.translate("donutmaparts.gui.hover.link_account").split("\n"));
         this.addButton(link, (pressed, mouseButton) -> openLinkAccountDialog());
+        this.addLabel(x + link.getWidth() + 6, y + 6, -1, 10, 0xFFA0A0A0,
+            StringUtils.translate("donutmaparts.gui.label.link_account"));
     }
 
     /**
@@ -185,7 +190,7 @@ public class GuiConfig extends GuiConfigsBase {
         // straight to the text field's setMaxLength, so anything smaller
         // silently truncates a pasted code into one normalize() then rejects.
         GuiBase.openGui(textInput(
-            32, "donutmaparts.gui.title.link_account", this,
+            32, "donutmaparts.gui.title.link_account", "", this,
             (IStringConsumerFeedback) raw -> onLinkCodeEntered(mc, client, apiToken, raw)));
     }
 
@@ -225,9 +230,9 @@ public class GuiConfig extends GuiConfigsBase {
      * ignores every key until it is clicked. Focusing it again once the dialog
      * is up switches text input on, the same thing a click does.
      */
-    private static GuiTextInput textInput(int maxLength, String titleKey, Screen parent,
-                                          IStringConsumerFeedback consumer) {
-        return new GuiTextInput(maxLength, titleKey, "", parent, consumer) {
+    static GuiTextInput textInput(int maxLength, String titleKey, String defaultText, Screen parent,
+                                  IStringConsumerFeedback consumer) {
+        return new GuiTextInput(maxLength, titleKey, defaultText, parent, consumer) {
             @Override
             public void initGui() {
                 super.initGui();

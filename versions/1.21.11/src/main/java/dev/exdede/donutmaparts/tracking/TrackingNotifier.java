@@ -15,7 +15,7 @@ import net.minecraft.text.Text;
 public final class TrackingNotifier {
     private TrackingNotifier() {}
 
-    public static void alert(MinecraftClient mc, int mapId, String screenTitle, int slotIndex) {
+    public static void alert(MinecraftClient mc, int mapId, String groupName, String screenTitle, int slotIndex) {
         if (mc == null) return;
 
         if (Configs.Tracking.ALERT_SOUND_ENABLED.getBooleanValue()) {
@@ -30,7 +30,7 @@ public final class TrackingNotifier {
             SystemToast.show(
                 mc.getToastManager(),
                 new SystemToast.Type(5000L),
-                Text.literal("Tracked mapart found"),
+                Text.literal("Found: " + groupName),
                 Text.literal("Map #" + mapId + " in " + screenTitle + ", slot " + slotIndex));
         }
     }

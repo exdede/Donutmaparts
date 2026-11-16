@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.5.0
+
+### Tracking groups
+
+Tracked map IDs now live in named, color-coded groups. One mapart is usually
+many map IDs (every printed copy has its own), so a group is one art and
+all of its copies.
+
+- Paste IDs from clipboard: copy a list of any size and click once. No more
+  splitting a big list into parts because the paste box was too small.
+- Type IDs still works for a few IDs at a time. Either way you name the group.
+- Groups screen: one row per group with its color, name and map count.
+  Remove a whole group in one click, or remove all of them. Click the color
+  to change it, click the name to rename it.
+- Hover a group to see what the map looks like on the DonutMaparts wall,
+  before you have found it in game.
+- A found map glows in its group's color, and the toast says which group
+  it belongs to.
+- "Auto remove on match" now removes the whole group once any copy is found.
+- Your existing tracked IDs move into a group called "Tracked" on first launch.
+
+### Map preview
+
+- Maps the wall took down now say "Removed from wall" instead of "No
+  preview", so it is clear the map was captured and later removed, not
+  that nobody has ever seen it.
+- Wall previews show up faster: the wait for the server's own map data is
+  0.3 seconds instead of 1 (for new installs, existing settings are kept),
+  and more previews load at once.
+
+### Linking your account
+
+- The General tab now says where link codes come from: log in at
+  exdede.xyz/account, generate a code, then click Link Account while on
+  DonutSMP. Hover the button for the steps.
+
 ## 0.4.0 for Minecraft 26.3
 
 Added to the 0.4.0 release on 2026-11-12. Same features as the other 0.4.0

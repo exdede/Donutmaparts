@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * value to onEvict so the caller can free the texture.
  */
 public final class RemotePreviewCache<T> {
-    public enum Status { ABSENT, LOADING, READY, MISSING, FAILED }
+    public enum Status { ABSENT, LOADING, READY, MISSING, REMOVED, FAILED }
 
     private static final class Entry<T> {
         Status status;
@@ -56,7 +56,7 @@ public final class RemotePreviewCache<T> {
     public Status status(int mapId, long nowMillis) {
         Entry<T> e = this.entries.get(mapId);
         if (e == null) return Status.ABSENT;
-        if ((e.status == Status.MISSING || e.status == Status.FAILED) && nowMillis >= e.retryAtMillis) {
+        if (e.status != Status.LOADING && e.status != Status.READY && nowMillis >= e.retryAtMillis) {
             return Status.ABSENT;
         }
         return e.status;
@@ -104,6 +104,14 @@ public final class RemotePreviewCache<T> {
         Entry<T> e = finish(mapId, generation);
         if (e == null) return;
         e.status = Status.MISSING;
+        e.retryAtMillis = nowMillis + this.missingRetryMillis;
+    }
+
+    /** Like missing, but the wall says it had the map and took it down. */
+    public void removed(int mapId, long generation, long nowMillis) {
+        Entry<T> e = finish(mapId, generation);
+        if (e == null) return;
+        e.status = Status.REMOVED;
         e.retryAtMillis = nowMillis + this.missingRetryMillis;
     }
 

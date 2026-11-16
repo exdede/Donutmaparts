@@ -76,23 +76,28 @@ On Prism, the CurseForge app, the Modrinth app or Lunar? There are
 
 ## Mapart tracking
 
-Hunting a specific mapart? Put its map ID on the tracking list and let the mod
-watch for you.
+Hunting a specific mapart? Put its map IDs in a tracking group and let the mod
+watch for you. One art is usually many map IDs (every printed copy has its
+own), so a group is one art and all its copies.
 
-Open **Settings > Tracking**, then either add one ID at a time or paste a whole
-batch separated by commas or newlines. Duplicates and anything that is not a
-map ID get dropped, so pasting the same list twice is harmless.
+Open **Settings > Tracking**, copy a list of IDs of any size and click **Paste
+IDs from clipboard**, or click **Type IDs** for a few. Name the group and it
+gets its own highlight color. Anything that is not a map ID gets dropped.
+
+**Groups** lists every group with its color and map count. Remove a group in
+one click, change its color or rename it, and hover a row to see the map from
+the DonutMaparts wall before you have found it in game.
 
 From then on, whenever you open any inventory, chest, shulker or ender chest,
 the mod checks every slot. If a tracked map is in there it:
 
 - plays a sound, one of six you can pick from, or none at all
-- posts a toast naming the map and where it turned up
-- pulses a gold highlight on that exact slot until you close the screen
+- posts a toast naming the group and where the map turned up
+- pulses a highlight in the group's color on that exact slot until you close the screen
 
 Each map alerts once per time you open a container, so a chest full of tracked
-maps does not turn into a slot machine. Flip on **auto remove** and an ID drops
-off the list the moment you find it.
+maps does not turn into a slot machine. Flip on **auto remove** and the whole group
+drops off the list the moment you find any copy.
 
 Tracking works on any server and in singleplayer, and keeps working with
 uploads turned off. It sends nothing anywhere. Your list never leaves your
@@ -156,7 +161,7 @@ Open the config two ways:
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Tracking enabled | on | Master toggle for the tracking alerts |
-| Auto remove on match | off | Drop an ID from the list as soon as it is found |
+| Auto remove on match | off | Remove a whole group as soon as any of its maps is found |
 | Alert sound enabled | on | Play a sound on a match |
 | Alert sound | Pling | Pling, Bell, XP Pickup, Level Up, Anvil Land or Arrow Hit |
 | Tracking toasts | on | Show a toast on a match, independent of the upload toasts above |
@@ -192,9 +197,10 @@ Open the config two ways:
 | Wall credit | on | Mark wall pictures "via exdede.xyz/maparts", since they may be older than the map in game |
 | Show placeholder | on | "No preview" box when there is no picture, instead of nothing |
 
-Plus three buttons: **Add ID**, **Bulk Add** and **Tracked IDs (N)**, the last
-of which opens the list editor where you can remove entries one by one, and a
-link code field to connect your web account.
+Plus three buttons: **Paste IDs from clipboard**, **Type IDs** and **Groups**,
+the last of which opens the group list. To link your web account, log in at
+exdede.xyz/account, generate a link code, then click **Link Account** on the
+General tab while on DonutSMP and paste it.
 
 ## Privacy and takedowns
 

@@ -23,7 +23,7 @@ public final class MapPreviewTextures {
     private static final long FAILED_RETRY_MILLIS = 15L * 1000L;
 
     private final RemotePreviewCache<PreviewTexture> cache =
-        new RemotePreviewCache<>(128, 3, MISSING_RETRY_MILLIS, FAILED_RETRY_MILLIS, MapPreviewTextures::destroy);
+        new RemotePreviewCache<>(128, 6, MISSING_RETRY_MILLIS, FAILED_RETRY_MILLIS, MapPreviewTextures::destroy);
     private RemotePreviewClient client;
     private int nextTextureIndex;
 
@@ -50,6 +50,12 @@ public final class MapPreviewTextures {
         MinecraftClient mc = MinecraftClient.getInstance();
         DebugLog.http("preview: fetching map " + mapId + " from the wall");
         this.client.fetchPng(mapId).whenComplete((png, error) -> {
+            if (error instanceof RemotePreviewClient.RemovedFromWall
+                    || (error != null && error.getCause() instanceof RemotePreviewClient.RemovedFromWall)) {
+                DebugLog.http("preview: map " + mapId + " was removed from the wall");
+                mc.execute(() -> this.cache.removed(mapId, generation, System.currentTimeMillis()));
+                return;
+            }
             if (error != null) {
                 DebugLog.http("preview: map " + mapId + " fetch failed: " + error.getMessage());
                 mc.execute(() -> this.cache.failed(mapId, generation, System.currentTimeMillis()));

@@ -18,6 +18,13 @@ import java.util.concurrent.CompletableFuture;
  * Pure Java with no Minecraft imports, tested against a stub server.
  */
 public class RemotePreviewClient {
+    /** The wall had this map but took it down (low quality, banned, hidden for review). */
+    public static final class RemovedFromWall extends RuntimeException {
+        public RemovedFromWall() {
+            super("map removed from the wall", null, false, false);
+        }
+    }
+
     private final String baseUrl;
     private final HttpClient http;
 
@@ -33,7 +40,8 @@ public class RemotePreviewClient {
      * Completes with the PNG bytes, or empty when the wall has no showable
      * picture for this map. Completes exceptionally on transport errors,
      * server errors and rate limiting, so the caller can tell "not on the
-     * wall" (remember for a long time) from "try again later".
+     * wall" (remember for a long time) from "try again later". A map the
+     * wall took down completes exceptionally with RemovedFromWall.
      */
     public CompletableFuture<Optional<byte[]>> fetchPng(int mapId) {
         HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/api/mod/map-preview/" + Integer.toUnsignedString(mapId)))
@@ -43,6 +51,7 @@ public class RemotePreviewClient {
         return http.sendAsync(req, HttpResponse.BodyHandlers.ofByteArray())
             .thenCompose(resp -> {
                 if (resp.statusCode() == 404) return CompletableFuture.completedFuture(Optional.empty());
+                if (resp.statusCode() == 410) return CompletableFuture.failedFuture(new RemovedFromWall());
                 if (resp.statusCode() / 100 != 2) {
                     return CompletableFuture.failedFuture(new IllegalStateException("map preview HTTP " + resp.statusCode()));
                 }

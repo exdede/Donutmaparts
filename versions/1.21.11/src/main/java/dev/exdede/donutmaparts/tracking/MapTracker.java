@@ -12,8 +12,10 @@ import net.minecraft.component.type.MapIdComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +46,9 @@ public final class MapTracker {
     private final ScreenAlertLog alertLog = new ScreenAlertLog();
     private List<String> snapshotSource = List.of();
     private Set<Integer> trackedIds = Set.of();
+    private Map<Integer, TrackedGroups.Group> groupById = Map.of();
+    /** Highlight color of each map matched while open, so the glow keeps its color after auto remove. */
+    private final Map<Integer, Integer> matchedColors = new HashMap<>();
 
     /**
      * In-memory only, cleared on relaunch. Auto-collection's backend endpoint
@@ -139,9 +144,11 @@ public final class MapTracker {
                 if (!this.trackedIds.contains(mapId)) continue;
                 if (!this.alertLog.shouldAlert(screen, mapId)) continue;
 
+                TrackedGroups.Group group = this.groupById.get(mapId);
                 this.alertLog.noteHighlight(mapId);
+                this.matchedColors.put(mapId, group.color());
                 DebugLog.tracking("tracked map " + mapId + " found in " + title + " slot " + i);
-                TrackingNotifier.alert(mc, mapId, title, i);
+                TrackingNotifier.alert(mc, mapId, group.name(), title, i);
 
                 if (Configs.Tracking.AUTO_REMOVE_ON_MATCH.getBooleanValue()) {
                     removeTracked(mapId);
@@ -237,6 +244,13 @@ public final class MapTracker {
         return isHighlightEligible(mapId);
     }
 
+    /** RGB of the group a highlighted map belongs to (or belonged to, before auto remove). */
+    public int highlightColor(int mapId) {
+        TrackedGroups.Group group = this.groupById.get(mapId);
+        if (group != null) return group.color();
+        return this.matchedColors.getOrDefault(mapId, TrackedGroups.PALETTE[0]);
+    }
+
     /**
      * The trackedIds/scope half of shouldHighlight(), split out from the
      * Configs.Tracking.TRACKING_ENABLED check above so it can be unit tested
@@ -250,19 +264,21 @@ public final class MapTracker {
         return this.alertLog.isHighlighted(mapId) || this.trackedIds.contains(mapId);
     }
 
+    /** Found one copy, so the whole group it belongs to is done. */
     private void removeTracked(int mapId) {
-        List<String> updated = TrackedIds.remove(
-            Configs.Tracking.TRACKED_MAP_IDS.getStrings(), mapId);
-        Configs.Tracking.TRACKED_MAP_IDS.setStrings(updated);
+        List<String> updated = TrackedGroups.removeContaining(
+            Configs.Tracking.TRACKED_GROUPS.getStrings(), mapId);
+        Configs.Tracking.TRACKED_GROUPS.setStrings(updated);
         refreshSnapshot();
-        DebugLog.tracking("auto-removed map " + mapId + ", " + updated.size() + " still tracked");
+        DebugLog.tracking("auto-removed the group holding map " + mapId + ", " + updated.size() + " groups left");
     }
 
     private void refreshSnapshot() {
-        List<String> current = Configs.Tracking.TRACKED_MAP_IDS.getStrings();
+        List<String> current = Configs.Tracking.TRACKED_GROUPS.getStrings();
         if (current.equals(this.snapshotSource)) return;
         this.snapshotSource = List.copyOf(current);
-        this.trackedIds = TrackedIds.toIdSet(current);
+        this.groupById = TrackedGroups.byId(TrackedGroups.decode(current));
+        this.trackedIds = this.groupById.keySet();
         DebugLog.tracking("tracked ID snapshot rebuilt, " + this.trackedIds.size() + " IDs");
     }
 

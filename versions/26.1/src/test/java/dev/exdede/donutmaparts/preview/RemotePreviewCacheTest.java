@@ -58,6 +58,15 @@ class RemotePreviewCacheTest {
     }
 
     @Test
+    void removedIsRememberedLikeAMiss() {
+        var c = cache(10, 3);
+        c.tryBegin(1, 0);
+        c.removed(1, c.generation(), 0);
+        assertEquals(Status.REMOVED, c.status(1, 500));
+        assertEquals(Status.ABSENT, c.status(1, 1000));
+    }
+
+    @Test
     void evictsLeastRecentlyUsedAndHandsBackTheValue() {
         var c = cache(2, 3);
         for (int id = 1; id <= 2; id++) {

@@ -18,6 +18,7 @@ import fi.dy.masa.malilib.config.options.ConfigStringList;
 import fi.dy.masa.malilib.util.FileUtils;
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
 import dev.exdede.donutmaparts.DonutMapartsMod;
+import dev.exdede.donutmaparts.tracking.TrackedGroups;
 import dev.exdede.donutmaparts.preview.PreviewOptions;
 
 public class Configs implements IConfigHandler {
@@ -55,10 +56,13 @@ public class Configs implements IConfigHandler {
     public static class Tracking {
         public static final ConfigBoolean TRACKING_ENABLED = new ConfigBoolean(
             "trackingEnabled", true, "Watch open inventories for maps on your tracked ID list");
+        // Pre-groups flat list, read only so loadFromFile can fold it into a group.
         public static final ConfigStringList TRACKED_MAP_IDS = new ConfigStringList(
-            "trackedMapIds", ImmutableList.of(), "Map IDs to watch for. Edited from the Tracking tab");
+            "trackedMapIds", ImmutableList.of(), "Old flat tracked ID list, moved into a group on load");
+        public static final ConfigStringList TRACKED_GROUPS = new ConfigStringList(
+            "trackedGroups", ImmutableList.of(), "Tracked map ID groups. Edited from the Tracking tab");
         public static final ConfigBoolean AUTO_REMOVE_ON_MATCH = new ConfigBoolean(
-            "autoRemoveOnMatch", false, "Drop a map ID from the tracked list once it has been found");
+            "autoRemoveOnMatch", false, "Remove a whole group once any of its maps has been found");
         public static final ConfigBoolean ALERT_SOUND_ENABLED = new ConfigBoolean(
             "alertSoundEnabled", true, "Play a sound when a tracked map is found");
         public static final ConfigOptionList ALERT_SOUND = new ConfigOptionList(
@@ -93,14 +97,13 @@ public class Configs implements IConfigHandler {
 
         // Everything persisted to disk.
         public static final List<IConfigBase> OPTIONS = ImmutableList.of(
-            TRACKING_ENABLED, TRACKED_MAP_IDS, AUTO_REMOVE_ON_MATCH,
+            TRACKING_ENABLED, TRACKED_MAP_IDS, TRACKED_GROUPS, AUTO_REMOVE_ON_MATCH,
             ALERT_SOUND_ENABLED, ALERT_SOUND, TRACKING_TOASTS,
             TRACK_CHEST, TRACK_ENDER_CHEST, TRACK_SHULKER_BOX,
             TRACK_AUCTION_HOUSE, TRACK_OTHER, AUTO_COLLECT);
 
-        // What the Tracking tab renders as widgets. TRACKED_MAP_IDS is deliberately
-        // absent: it gets its own button row so the tab can offer add and bulk add
-        // alongside the list editor.
+        // What the Tracking tab renders as widgets. The ID lists are deliberately
+        // absent: groups get their own button row and screen.
         public static final List<IConfigBase> GUI_OPTIONS = ImmutableList.of(
             TRACKING_ENABLED, AUTO_REMOVE_ON_MATCH, ALERT_SOUND_ENABLED,
             ALERT_SOUND, TRACKING_TOASTS,
@@ -149,7 +152,7 @@ public class Configs implements IConfigHandler {
             "remoteFallback", true,
             "When the server has not sent this map's pixels, show its last captured picture from the DonutMaparts wall instead. The in-game map is always preferred when available");
         public static final ConfigInteger REMOTE_DELAY_MILLIS = new ConfigInteger(
-            "remoteDelayMillis", 1000, 0, 10000,
+            "remoteDelayMillis", 300, 0, 10000,
             "How long to wait for the server to send a map's pixels before asking the wall, in milliseconds");
         public static final ConfigBoolean WALL_CREDIT = new ConfigBoolean(
             "wallCredit", true, "Mark pictures that came from the wall with 'via exdede.xyz/maparts', since they may be older than the map in game");
@@ -182,12 +185,22 @@ public class Configs implements IConfigHandler {
                     ConfigUtils.readConfigBase(root, "General", General.OPTIONS);
                     ConfigUtils.readConfigBase(root, "Tracking", Tracking.OPTIONS);
                     ConfigUtils.readConfigBase(root, "Preview", Preview.OPTIONS);
+                    migrateTrackedIds();
                 }
             }
             catch (RuntimeException e) {
                 DonutMapartsMod.LOGGER.warn("Failed to parse config file {}, using defaults", configFile, e);
             }
         }
+    }
+
+    private static void migrateTrackedIds() {
+        List<String> legacy = Tracking.TRACKED_MAP_IDS.getStrings();
+        if (legacy.isEmpty()) return;
+        Tracking.TRACKED_GROUPS.setStrings(
+            TrackedGroups.migrate(Tracking.TRACKED_GROUPS.getStrings(), legacy));
+        Tracking.TRACKED_MAP_IDS.setStrings(List.of());
+        saveToFile();
     }
 
     public static void saveToFile() {

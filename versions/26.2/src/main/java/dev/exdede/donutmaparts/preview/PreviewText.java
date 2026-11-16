@@ -7,7 +7,7 @@ public final class PreviewText {
     private PreviewText() {}
 
     /** Where the picture being shown came from, for the optional label. */
-    public enum Source { LOCAL, WALL, LOADING, NONE }
+    public enum Source { LOCAL, WALL, LOADING, REMOVED, NONE }
 
     /**
      * Broader than TrackingScope's "auction house" substring on purpose: a
@@ -42,6 +42,7 @@ public final class PreviewText {
     public static String placeholder(Source source) {
         return switch (source) {
             case LOADING -> "Loading...";
+            case REMOVED -> "Removed from wall";
             case NONE -> "No preview";
             default -> null;
         };
@@ -52,6 +53,7 @@ public final class PreviewText {
             case LOCAL -> "server";
             case WALL -> "wall";
             case LOADING -> "loading";
+            case REMOVED -> "removed";
             case NONE -> "unavailable";
         };
     }

@@ -109,7 +109,7 @@ public class HandledScreenMixin {
             }
 
             if (MapTracker.INSTANCE != null && MapTracker.INSTANCE.shouldHighlight(mapId.id())) {
-                donutmaparts$drawTrackedHighlight(context, slot);
+                donutmaparts$drawTrackedHighlight(context, slot, MapTracker.INSTANCE.highlightColor(mapId.id()));
             }
         } catch (Throwable t) {
             DonutMapartsMod.LOGGER.error("Unhandled exception in drawSlot mixin handler", t);
@@ -117,14 +117,14 @@ public class HandledScreenMixin {
     }
 
     @Unique
-    private static void donutmaparts$drawTrackedHighlight(DrawContext context, Slot slot) {
+    private static void donutmaparts$drawTrackedHighlight(DrawContext context, Slot slot, int rgb) {
         // One second sine, alpha 0.35 to 1.0. The motion is what makes the slot
         // findable; a static border reads too much like the vanilla hover box.
         double phase = (System.currentTimeMillis() % 1000L) / 1000.0;
         double wave = 0.5 + 0.5 * Math.sin(phase * 2.0 * Math.PI);
         int alpha = (int) ((0.35 + 0.65 * wave) * 255.0);
-        int border = (alpha << 24) | 0x00FFAA00;
-        int tint = ((alpha / 5) << 24) | 0x00FFAA00;
+        int border = (alpha << 24) | rgb;
+        int tint = ((alpha / 5) << 24) | rgb;
 
         int x = slot.x;
         int y = slot.y;

@@ -49,6 +49,13 @@ class RemotePreviewClientTest {
     }
 
     @Test
+    void goneIsRemovedFromTheWall() {
+        respond("/api/mod/map-preview/11", 410, "{\"error\":\"removed from the wall\"}".getBytes(StandardCharsets.UTF_8));
+        ExecutionException e = assertThrows(ExecutionException.class, () -> new RemotePreviewClient(baseUrl).fetchPng(11).get());
+        assertTrue(e.getCause() instanceof RemotePreviewClient.RemovedFromWall);
+    }
+
+    @Test
     void rateLimitingFailsRatherThanCountsAsMissing() {
         respond("/api/mod/map-preview/9", 429, "{\"error\":\"rate limited\"}".getBytes(StandardCharsets.UTF_8));
         assertThrows(ExecutionException.class, () -> new RemotePreviewClient(baseUrl).fetchPng(9).get());

@@ -61,6 +61,7 @@ public final class MapPreviewRenderer {
             source = switch (MapPreviewTextures.INSTANCE.request(mapId.id())) {
                 case READY -> PreviewText.Source.WALL;
                 case LOADING -> PreviewText.Source.LOADING;
+                case REMOVED -> PreviewText.Source.REMOVED;
                 default -> PreviewText.Source.NONE;
             };
         }
@@ -74,7 +75,50 @@ public final class MapPreviewRenderer {
         if (label != null) lines.add(label);
         String credit = PreviewText.credit(source, Configs.Preview.WALL_CREDIT.getBooleanValue());
         if (credit != null) lines.add(credit);
+        return layout(mc, mapId, source, state, pictureSize, padding, lines);
+    }
 
+    /**
+     * A tracked group's picture, always from the wall: the group screen is
+     * where a player looks up what they are hunting before they have seen it
+     * in game. Walks the group's IDs for the first one the wall can show,
+     * skipping copies it took down, with up to the texture cache's in-flight
+     * cap of lookups running at once.
+     */
+    public static Box resolveGroup(MinecraftClient mc, List<Integer> ids, String name, int pictureSize, int padding) {
+        int shown = ids.get(0);
+        PreviewText.Source source = PreviewText.Source.NONE;
+        boolean removed = false;
+        boolean other = false;
+        boolean pending = false;
+        for (int id : ids) {
+            RemotePreviewCache.Status status = MapPreviewTextures.INSTANCE.request(id);
+            if (status == RemotePreviewCache.Status.READY) {
+                shown = id;
+                source = PreviewText.Source.WALL;
+                break;
+            }
+            if (status == RemotePreviewCache.Status.LOADING) pending = true;
+            else if (status == RemotePreviewCache.Status.ABSENT) {
+                // Every fetch slot is busy; the rest wait for a later frame.
+                pending = true;
+                break;
+            }
+            else if (status == RemotePreviewCache.Status.REMOVED) removed = true;
+            else other = true;
+        }
+        if (source == PreviewText.Source.NONE) {
+            if (pending) source = PreviewText.Source.LOADING;
+            else if (removed && !other) source = PreviewText.Source.REMOVED;
+        }
+        List<String> lines = new ArrayList<>(2);
+        lines.add(name);
+        lines.add(source == PreviewText.Source.WALL ? "Map #" + shown : ids.size() + (ids.size() == 1 ? " map" : " maps"));
+        return layout(mc, new MapIdComponent(shown), source, null, pictureSize, padding, lines);
+    }
+
+    private static Box layout(MinecraftClient mc, MapIdComponent mapId, PreviewText.Source source, MapState state,
+                              int pictureSize, int padding, List<String> lines) {
         TextRenderer font = mc.textRenderer;
         int paper = frameStyle() == PreviewOptions.FrameStyle.MAP_PAPER ? Math.max(3, Math.round(pictureSize * 0.07F)) : 0;
         int border = borderWidth();
