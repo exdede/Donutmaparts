@@ -27,5 +27,6 @@
   "donutmaparts.gui.label.map_count": "%d maps",
   "donutmaparts.gui.label.no_groups": "Nothing tracked yet. Paste or type map IDs on the Tracking tab.",
   "donutmaparts.gui.label.link_account": "Get a code at exdede.xyz/account, then click Link Account while on DonutSMP",
-  "donutmaparts.gui.hover.link_account": "1. Log in at exdede.xyz/account\n2. Click 'generate link code' and copy it\n3. Join DonutSMP, open these settings, click Link Account, paste the code"
+  "donutmaparts.gui.hover.link_account": "1. Log in at exdede.xyz/account\n2. Click 'generate link code' and copy it\n3. Join DonutSMP, open these settings, click Link Account, paste the code",
+  "donutmaparts.gui.message.sorting": "Sorting the IDs into one group per art..."
 }

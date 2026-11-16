@@ -51,4 +51,11 @@ class PreviewTextTest {
         assertFalse(PreviewOptions.Mode.PANEL.tooltip());
         assertFalse(PreviewOptions.Mode.TOOLTIP.panel());
     }
+
+    @Test
+    void wrapsPlaceholdersToFit() {
+        assertEquals(java.util.List.of("Removed", "from wall"), PreviewText.wrap("Removed from wall", 9, String::length));
+        assertEquals(java.util.List.of("No preview"), PreviewText.wrap("No preview", 100, String::length));
+        assertEquals(java.util.List.of("Loading..."), PreviewText.wrap("Loading...", 3, String::length));
+    }
 }

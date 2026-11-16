@@ -1,10 +1,16 @@
 package dev.exdede.donutmaparts.preview;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -57,5 +63,44 @@ public class RemotePreviewClient {
                 }
                 return CompletableFuture.completedFuture(Optional.of(resp.body()));
             });
+    }
+
+    /** One wall art and the pasted map ids that show it now. */
+    public record ArtGroup(int imageId, List<Integer> ids) {}
+
+    /** Pasted ids sorted by wall art, biggest group first, plus the ids the wall never saw. */
+    public record Split(List<ArtGroup> groups, List<Integer> unknown) {}
+
+    /**
+     * Asks the wall which art each map id shows, so a paste covering several
+     * arts becomes one tracking group per art. Fails on any non 200, and the
+     * caller falls back to keeping the paste as one group.
+     */
+    public CompletableFuture<Split> splitByArt(List<Integer> ids) {
+        JsonArray arr = new JsonArray();
+        for (Integer id : ids) arr.add(Integer.toUnsignedLong(id));
+        JsonObject body = new JsonObject();
+        body.add("ids", arr);
+        HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/api/mod/map-groups"))
+            .timeout(Duration.ofSeconds(10))
+            .header("content-type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+            .build();
+        return http.sendAsync(req, HttpResponse.BodyHandlers.ofString()).thenApply(resp -> {
+            if (resp.statusCode() != 200) throw new IllegalStateException("map groups HTTP " + resp.statusCode());
+            JsonObject root = JsonParser.parseString(resp.body()).getAsJsonObject();
+            List<ArtGroup> groups = new ArrayList<>();
+            for (JsonElement g : root.getAsJsonArray("groups")) {
+                JsonObject o = g.getAsJsonObject();
+                groups.add(new ArtGroup(o.get("imageId").getAsInt(), ints(o.getAsJsonArray("ids"))));
+            }
+            return new Split(groups, ints(root.getAsJsonArray("unknown")));
+        });
+    }
+
+    private static List<Integer> ints(JsonArray arr) {
+        List<Integer> out = new ArrayList<>();
+        for (JsonElement e : arr) out.add((int) e.getAsLong());
+        return out;
     }
 }

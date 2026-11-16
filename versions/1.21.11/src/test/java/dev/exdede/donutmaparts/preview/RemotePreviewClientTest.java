@@ -66,4 +66,14 @@ class RemotePreviewClientTest {
         respond("/api/mod/map-preview/10", 503, "{\"error\":\"maintenance\"}".getBytes(StandardCharsets.UTF_8));
         assertThrows(ExecutionException.class, () -> new RemotePreviewClient(baseUrl).fetchPng(10).get());
     }
+
+    @Test
+    void splitsIdsByArt() throws Exception {
+        respond("/api/mod/map-groups", 200,
+            "{\"groups\":[{\"imageId\":1812,\"ids\":[1,2]},{\"imageId\":7,\"ids\":[3]}],\"unknown\":[4]}".getBytes(StandardCharsets.UTF_8));
+        RemotePreviewClient.Split split = new RemotePreviewClient(baseUrl).splitByArt(java.util.List.of(1, 2, 3, 4)).get();
+        assertEquals(1812, split.groups().get(0).imageId());
+        assertEquals(java.util.List.of(1, 2), split.groups().get(0).ids());
+        assertEquals(java.util.List.of(4), split.unknown());
+    }
 }

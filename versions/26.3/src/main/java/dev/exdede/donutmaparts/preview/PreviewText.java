@@ -1,6 +1,9 @@
 package dev.exdede.donutmaparts.preview;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.function.ToIntFunction;
 
 /** String decisions for the preview, kept free of Minecraft imports for tests. */
 public final class PreviewText {
@@ -46,6 +49,23 @@ public final class PreviewText {
             case NONE -> "No preview";
             default -> null;
         };
+    }
+
+    /** Greedy word wrap so a placeholder fits inside a small picture. A single too-long word gets its own line. */
+    public static List<String> wrap(String text, int maxWidth, ToIntFunction<String> width) {
+        List<String> lines = new ArrayList<>();
+        String line = "";
+        for (String word : text.split(" ")) {
+            String next = line.isEmpty() ? word : line + " " + word;
+            if (!line.isEmpty() && width.applyAsInt(next) > maxWidth) {
+                lines.add(line);
+                line = word;
+            } else {
+                line = next;
+            }
+        }
+        if (!line.isEmpty()) lines.add(line);
+        return lines;
     }
 
     private static String sourceName(Source source) {

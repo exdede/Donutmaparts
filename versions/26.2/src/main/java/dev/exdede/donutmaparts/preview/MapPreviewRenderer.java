@@ -166,8 +166,12 @@ public final class MapPreviewRenderer {
                 if (text != null) {
                     Font font = mc.font;
                     int color = box.paper() > 0 ? 0xFF6B5B45 : 0xFF808080;
-                    ctx.text(font, text, px + (size - font.width(text)) / 2,
-                        py + (size - font.lineHeight) / 2, color, box.paper() == 0);
+                    List<String> rows = PreviewText.wrap(text, size - 4, font::width);
+                    int ty = py + (size - rows.size() * font.lineHeight) / 2;
+                    for (String row : rows) {
+                        ctx.text(font, row, px + (size - font.width(row)) / 2, ty, color, box.paper() == 0);
+                        ty += font.lineHeight;
+                    }
                 }
             }
         }

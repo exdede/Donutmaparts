@@ -6,6 +6,7 @@ import dev.exdede.donutmaparts.config.Configs;
 import dev.exdede.donutmaparts.debug.DebugLog;
 import dev.exdede.donutmaparts.net.BackendClient;
 import dev.exdede.donutmaparts.net.LinkCodes;
+import dev.exdede.donutmaparts.preview.RemotePreviewClient;
 import dev.exdede.donutmaparts.session.LinkNotifier;
 import dev.exdede.donutmaparts.session.UploadSession;
 import dev.exdede.donutmaparts.tracking.TrackedGroups;
@@ -113,8 +114,10 @@ public class GuiConfig extends GuiConfigsBase {
     }
 
     /**
-     * Shared by the clipboard button and the typed input: parse the IDs, then
-     * ask what to call the new group.
+     * Shared by the clipboard button and the typed input. A paste covering
+     * several arts (a whole collection copied from the site) is split into one
+     * group per art by asking the wall which art each map shows; a single art,
+     * or no answer from the wall, falls back to one group the player names.
      */
     private void onIdsEntered(String text) {
         List<Integer> parsed = TrackedIds.parseIds(text);
@@ -123,13 +126,44 @@ public class GuiConfig extends GuiConfigsBase {
             return;
         }
         int existing = TrackedGroups.decode(Configs.Tracking.TRACKED_GROUPS.getStrings()).size();
-        GuiBase.openGui(textInput(64, "donutmaparts.gui.title.group_name",
-            TrackedGroups.defaultName(existing), this,
+        if (parsed.size() == 1) {
+            askGroupName(parsed, TrackedGroups.defaultName(existing));
+            return;
+        }
+        this.addMessage(Message.MessageType.INFO, 4000, "donutmaparts.gui.message.sorting");
+        Minecraft mc = Minecraft.getInstance();
+        new RemotePreviewClient(Configs.General.BACKEND_URL).splitByArt(parsed)
+            .whenComplete((split, error) -> mc.execute(() -> {
+                if (error != null) {
+                    DebugLog.http("map groups lookup failed: " + error.getMessage());
+                    askGroupName(parsed, TrackedGroups.defaultName(existing));
+                    return;
+                }
+                int parts = split.groups().size() + (split.unknown().isEmpty() ? 0 : 1);
+                if (parts <= 1) {
+                    askGroupName(parsed, split.groups().isEmpty()
+                        ? TrackedGroups.defaultName(existing) : "Art #" + split.groups().get(0).imageId());
+                    return;
+                }
+                List<String> stored = Configs.Tracking.TRACKED_GROUPS.getStrings();
+                for (RemotePreviewClient.ArtGroup group : split.groups()) {
+                    stored = TrackedGroups.add(stored, "Art #" + group.imageId(), group.ids());
+                }
+                stored = TrackedGroups.add(stored, "Not on wall", split.unknown());
+                Configs.Tracking.TRACKED_GROUPS.setStrings(stored);
+                Configs.saveToFile();
+                DebugLog.tracking("split " + parsed.size() + " IDs into " + parts + " groups");
+                GuiBase.openGui(new GuiTrackedGroups(this));
+            }));
+    }
+
+    private void askGroupName(List<Integer> ids, String defaultName) {
+        GuiBase.openGui(textInput(64, "donutmaparts.gui.title.group_name", defaultName, this,
             (IStringConsumerFeedback) name -> {
                 Configs.Tracking.TRACKED_GROUPS.setStrings(
-                    TrackedGroups.add(Configs.Tracking.TRACKED_GROUPS.getStrings(), name, parsed));
+                    TrackedGroups.add(Configs.Tracking.TRACKED_GROUPS.getStrings(), name, ids));
                 Configs.saveToFile();
-                DebugLog.tracking("added a group of " + parsed.size() + " IDs");
+                DebugLog.tracking("added a group of " + ids.size() + " IDs");
                 return true;
             }));
     }

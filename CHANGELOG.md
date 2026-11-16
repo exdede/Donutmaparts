@@ -10,7 +10,11 @@ all of its copies.
 
 - Paste IDs from clipboard: copy a list of any size and click once. No more
   splitting a big list into parts because the paste box was too small.
-- Type IDs still works for a few IDs at a time. Either way you name the group.
+- Paste IDs from several arts at once (say, a whole collection copied from
+  your account page) and the mod asks the wall which art each map shows,
+  then makes one group per art, named "Art #<wall id>". IDs the wall has
+  never seen go in a "Not on wall" group.
+- Type IDs still works for a few IDs at a time. A single art gets a name you pick.
 - Groups screen: one row per group with its color, name and map count.
   Remove a whole group in one click, or remove all of them. Click the color
   to change it, click the name to rename it.
@@ -23,6 +27,7 @@ all of its copies.
 
 ### Map preview
 
+- Placeholder text wraps to fit small previews instead of spilling out.
 - Maps the wall took down now say "Removed from wall" instead of "No
   preview", so it is clear the map was captured and later removed, not
   that nobody has ever seen it.
