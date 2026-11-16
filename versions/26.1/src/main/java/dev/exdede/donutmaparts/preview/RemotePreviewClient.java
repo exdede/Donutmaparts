@@ -68,8 +68,8 @@ public class RemotePreviewClient {
     /** One wall art and the pasted map ids that show it now. */
     public record ArtGroup(int imageId, List<Integer> ids) {}
 
-    /** Pasted ids sorted by wall art, biggest group first, plus the ids the wall never saw. */
-    public record Split(List<ArtGroup> groups, List<Integer> unknown) {}
+    /** Pasted ids sorted by wall art, biggest group first, plus ids the wall took down or never saw. */
+    public record Split(List<ArtGroup> groups, List<Integer> removed, List<Integer> unknown) {}
 
     /**
      * Asks the wall which art each map id shows, so a paste covering several
@@ -94,7 +94,7 @@ public class RemotePreviewClient {
                 JsonObject o = g.getAsJsonObject();
                 groups.add(new ArtGroup(o.get("imageId").getAsInt(), ints(o.getAsJsonArray("ids"))));
             }
-            return new Split(groups, ints(root.getAsJsonArray("unknown")));
+            return new Split(groups, ints(root.getAsJsonArray("removed")), ints(root.getAsJsonArray("unknown")));
         });
     }
 

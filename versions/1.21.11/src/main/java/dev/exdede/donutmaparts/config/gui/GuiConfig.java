@@ -139,7 +139,8 @@ public class GuiConfig extends GuiConfigsBase {
                     askGroupName(parsed, TrackedGroups.defaultName(existing));
                     return;
                 }
-                int parts = split.groups().size() + (split.unknown().isEmpty() ? 0 : 1);
+                int parts = split.groups().size() + (split.removed().isEmpty() ? 0 : 1)
+                    + (split.unknown().isEmpty() ? 0 : 1);
                 if (parts <= 1) {
                     askGroupName(parsed, split.groups().isEmpty()
                         ? TrackedGroups.defaultName(existing) : "Art #" + split.groups().get(0).imageId());
@@ -149,6 +150,7 @@ public class GuiConfig extends GuiConfigsBase {
                 for (RemotePreviewClient.ArtGroup group : split.groups()) {
                     stored = TrackedGroups.add(stored, "Art #" + group.imageId(), group.ids());
                 }
+                stored = TrackedGroups.add(stored, "Removed from wall", split.removed());
                 stored = TrackedGroups.add(stored, "Not on wall", split.unknown());
                 Configs.Tracking.TRACKED_GROUPS.setStrings(stored);
                 Configs.saveToFile();
